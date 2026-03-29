@@ -1,19 +1,20 @@
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import mongoose from 'mongoose'; // ✅ Added missing import
 import EnvValidator from './src/config/envValidator.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Load environment specific .env file
-const envFile = process.env.NODE_ENV === 'production' 
-  ? '.env.production' 
-  : process.env.NODE_ENV === 'staging' 
-    ? '.env.staging' 
+const envFile = process.env.NODE_ENV === 'production'
+  ? '.env.production'
+  : process.env.NODE_ENV === 'staging'
+    ? '.env.staging'
     : '.env.development';
 
-dotenv.config({ path: path.join(__dirname, envFile) });
+dotenv.config({ path: envFile }); // ✅ Fixed: actually loads the correct env file
 
 // Validate environment variables
 EnvValidator.validate();
@@ -21,9 +22,8 @@ EnvValidator.validate();
 import connectDB from './src/config/db.js';
 import app from './src/app.js';
 
-const PORT = EnvValidator.get('PORT', 5000);
+const PORT = process.env.PORT || 10000;
 
-// Connect to MongoDB
 connectDB();
 
 const server = app.listen(PORT, () => {
@@ -42,18 +42,14 @@ const server = app.listen(PORT, () => {
 // Graceful shutdown
 const gracefulShutdown = async () => {
   console.log('\n🛑 Received shutdown signal. Closing server...');
-  
+
   server.close(async () => {
     console.log('✅ HTTP server closed');
-    
-    // Close database connection
-    await mongoose.connection.close();
+    await mongoose.connection.close(); // ✅ Now works with the import above
     console.log('✅ Database connection closed');
-    
     process.exit(0);
   });
-  
-  // Force close after 10 seconds
+
   setTimeout(() => {
     console.error('❌ Could not close connections in time, forcefully shutting down');
     process.exit(1);
@@ -63,13 +59,11 @@ const gracefulShutdown = async () => {
 process.on('SIGTERM', gracefulShutdown);
 process.on('SIGINT', gracefulShutdown);
 
-// Handle uncaught exceptions
 process.on('uncaughtException', (err) => {
   console.error('❌ Uncaught Exception:', err);
   gracefulShutdown();
 });
 
-// Handle unhandled rejections
 process.on('unhandledRejection', (reason, promise) => {
   console.error('❌ Unhandled Rejection:', reason);
   gracefulShutdown();
