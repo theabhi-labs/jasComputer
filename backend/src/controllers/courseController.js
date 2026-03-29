@@ -399,50 +399,66 @@ class CourseController extends BaseController {
       return this.error(res, error.message, 500);
     }
   }
+async updateCourse(req, res) {
+  try {
+    const { id } = req.params;
+    const course = await Course.findById(id);
+    if (!course) return this.error(res, 'Course not found', 404);
 
-  // Update course
-  async updateCourse(req, res) {
-    try {
-      const { id } = req.params;
-      
-      const course = await Course.findById(id);
-      if (!course) {
-        return this.error(res, MESSAGES.ERROR.NOT_FOUND, 404);
-      }
-      
-      // Check name duplication
-      if (req.body.name && req.body.name !== course.name) {
-        const existing = await Course.findOne({ name: req.body.name });
-        if (existing) {
-          return this.error(res, 'Course name already exists', 400);
-        }
-      }
-      
-      // Check code duplication
-      if (req.body.code && req.body.code !== course.code) {
-        const existing = await Course.findOne({ code: req.body.code });
-        if (existing) {
-          return this.error(res, 'Course code already exists', 400);
-        }
-      }
-      
-      // Validate discount if being updated
-      if (req.body.discount && req.body.discount.isDiscounted) {
-        if (req.body.discount.discountPercentage > 100 || req.body.discount.discountPercentage < 0) {
+    // Name duplication check
+    if (req.body.name && req.body.name !== course.name) {
+      const existingName = await Course.findOne({ name: req.body.name });
+      if (existingName) return this.error(res, 'Course name already exists', 400);
+    }
+
+    // Code duplication check
+    if (req.body.code && req.body.code !== course.code) {
+      const existingCode = await Course.findOne({ code: req.body.code });
+      if (existingCode) return this.error(res, 'Course code already exists', 400);
+    }
+
+    // Discount validation & merge
+    if (req.body.discount) {
+      const discount = req.body.discount;
+      if (discount.isDiscounted) {
+        if (
+          typeof discount.discountPercentage !== 'number' ||
+          discount.discountPercentage < 0 ||
+          discount.discountPercentage > 100
+        ) {
           return this.error(res, 'Discount percentage must be between 0 and 100', 400);
         }
       }
-      
-      Object.assign(course, req.body);
-      await course.save();
-      
-      return this.success(res, { course }, MESSAGES.SUCCESS.DATA_UPDATED);
-      
-    } catch (error) {
-      console.error('Update course error:', error);
-      return this.error(res, error.message, 500);
+      course.discount = {
+        isDiscounted: discount.isDiscounted ?? false,
+        discountPercentage: discount.discountPercentage ?? 0,
+        ...discount
+      };
     }
+
+    // Allowed fields
+    const allowedFields = [
+      'name', 'code', 'description', 'syllabus', 
+      'projects', 'faqs', 'media', 'seo', 'price'
+    ];
+    allowedFields.forEach((field) => {
+      if (req.body[field] !== undefined) {
+        // Ensure arrays/objects are at least empty if not provided
+        if (['syllabus', 'projects', 'faqs'].includes(field) && !Array.isArray(req.body[field])) {
+          course[field] = [];
+        } else {
+          course[field] = req.body[field];
+        }
+      }
+    });
+
+    await course.save();
+    return this.success(res, { course }, 'Course updated successfully');
+  } catch (error) {
+    console.error('Update course error:', error);
+    return this.error(res, error.message, 500);
   }
+}
 
   // Update course rating
   async updateCourseRating(req, res) {
