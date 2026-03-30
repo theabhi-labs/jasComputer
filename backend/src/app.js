@@ -48,37 +48,35 @@ const allowedOrigins = [
   'http://localhost:5173',
   'http://127.0.0.1:3000',
   'http://127.0.0.1:5173',
+  'http://localhost:4173',
   process.env.FRONTEND_URL
 ].filter(Boolean);
 
 // Log allowed origins for debugging
 console.log('CORS allowed origins:', allowedOrigins);
-
 app.use(cors({
   origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) {
-      return callback(null, true);
-    }
-    
-    // Allow all origins in development
+     console.log("Incoming Origin:", origin);
+    if (!origin) return callback(null, true);
+
+    // Development mode → allow all
     if (process.env.NODE_ENV === 'development') {
       return callback(null, true);
     }
-    
-    // Check if origin is allowed
+
     if (allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      console.warn('CORS blocked origin:', origin);
-      callback(new Error(`Origin ${origin} not allowed by CORS`));
+      return callback(null, true);
     }
+
+    console.warn('CORS blocked origin:', origin);
+
+    // ❗ IMPORTANT: error throw mat karo
+    return callback(null, false);
   },
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
-  exposedHeaders: ['Content-Range', 'X-Content-Range']
+  credentials: true
 }));
+
+app.options('*', cors());
 
 // Logging
 if (process.env.NODE_ENV === 'development') {

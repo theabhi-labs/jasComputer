@@ -1,8 +1,26 @@
-// CourseForm.jsx (Create/Update with Enhanced UI)
-import React, { useState } from 'react'
+// CourseForm.jsx - Enhanced UI/UX with Multi-step Navigation & Animations
+import React, { useState, useEffect } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { courseService } from '../../services'
 import { COURSE_LEVELS, COURSE_DURATION_UNITS, CERTIFICATE_TYPES, PROJECT_DIFFICULTY } from '../common/courseConstants'
 
+// Animation variants
+const pageVariants = {
+  initial: { opacity: 0, x: 20 },
+  animate: { opacity: 1, x: 0 },
+  exit: { opacity: 0, x: -20 }
+}
+
+const pageTransition = { type: 'tween', ease: 'easeInOut', duration: 0.3 }
+
+// Tab Configuration with icons and descriptions
+const tabs = [
+  { id: 'basic', label: 'Basic Info', icon: '📋', description: 'Course name, category, description' },
+  { id: 'content', label: 'Course Content', icon: '📚', description: 'Syllabus, projects, outcomes' },
+  { id: 'pricing', label: 'Pricing & Discount', icon: '💰', description: 'Fees, installments, certificates' },
+  { id: 'media', label: 'Media & SEO', icon: '🖼️', description: 'Thumbnail, SEO metadata' },
+  { id: 'advanced', label: 'Advanced', icon: '⚙️', description: 'Features, eligibility, status' }
+]
 
 const CourseForm = ({ course, onSuccess }) => {
   const [formData, setFormData] = useState({
@@ -69,7 +87,52 @@ const CourseForm = ({ course, onSuccess }) => {
   })
   
   const [loading, setLoading] = useState(false)
-  const [activeTab, setActiveTab] = useState('basic')
+  const [activeTabIndex, setActiveTabIndex] = useState(0)
+  const [validationErrors, setValidationErrors] = useState({})
+
+  // Validate current tab fields
+  const validateCurrentTab = () => {
+    const errors = {}
+    const currentTabId = tabs[activeTabIndex].id
+
+    if (currentTabId === 'basic') {
+      if (!formData.name.trim()) errors.name = 'Course name is required'
+      if (!formData.shortDescription.trim()) errors.shortDescription = 'Short description is required'
+      if (!formData.fullDescription.trim()) errors.fullDescription = 'Full description is required'
+      if (!formData.category.trim()) errors.category = 'Category is required'
+      if (!formData.level) errors.level = 'Course level is required'
+      if (!formData.duration.value || formData.duration.value <= 0) errors.duration = 'Valid duration is required'
+    }
+
+    if (currentTabId === 'content') {
+      if (formData.syllabus.length === 0) errors.syllabus = 'At least one syllabus module is required'
+      if (formData.learningOutcomes.length === 0) errors.learningOutcomes = 'At least one learning outcome is required'
+    }
+
+    if (currentTabId === 'pricing') {
+      if (formData.totalFees <= 0) errors.totalFees = 'Total fees must be greater than 0'
+      if (formData.installmentAllowed && formData.numberOfInstallments < 1) {
+        errors.numberOfInstallments = 'Number of installments must be at least 1'
+      }
+    }
+
+    if (currentTabId === 'media') {
+      if (!formData.thumbnail.trim()) errors.thumbnail = 'Thumbnail URL is required'
+    }
+
+    setValidationErrors(errors)
+    return Object.keys(errors).length === 0
+  }
+
+  const handleNext = () => {
+    if (validateCurrentTab()) {
+      setActiveTabIndex(prev => Math.min(prev + 1, tabs.length - 1))
+    }
+  }
+
+  const handleBack = () => {
+    setActiveTabIndex(prev => Math.max(prev - 1, 0))
+  }
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target
@@ -87,6 +150,10 @@ const CourseForm = ({ course, onSuccess }) => {
         ...formData,
         [name]: type === 'checkbox' ? checked : value
       })
+    }
+    // Clear error for this field if exists
+    if (validationErrors[name]) {
+      setValidationErrors({ ...validationErrors, [name]: '' })
     }
   }
 
@@ -188,16 +255,31 @@ const CourseForm = ({ course, onSuccess }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    // Final validation for all tabs before submit
+    let isValid = true
+    for (let i = 0; i < tabs.length; i++) {
+      setActiveTabIndex(i)
+      if (!validateCurrentTab()) {
+        isValid = false
+        break
+      }
+    }
+    
+    if (!isValid) {
+      alert('Please fix all errors before submitting')
+      return
+    }
+
     setLoading(true)
     
     try {
       // Calculate total projects
-      formData.totalProjects = formData.projects.length
+      const submitData = { ...formData, totalProjects: formData.projects.length }
       
       if (course?._id) {
-        await courseService.updateCourse(course._id, formData)
+        await courseService.updateCourse(course._id, submitData)
       } else {
-        await courseService.createCourse(formData)
+        await courseService.createCourse(submitData)
       }
       onSuccess()
     } catch (error) {
@@ -208,788 +290,924 @@ const CourseForm = ({ course, onSuccess }) => {
     }
   }
 
-  const tabs = [
-    { id: 'basic', label: 'Basic Info' },
-    { id: 'content', label: 'Course Content' },
-    { id: 'pricing', label: 'Pricing & Discount' },
-    { id: 'media', label: 'Media & SEO' },
-    { id: 'advanced', label: 'Advanced Settings' }
-  ]
+  const currentTab = tabs[activeTabIndex]
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      {/* Tab Navigation */}
-      <div className="border-b border-gray-200">
-        <nav className="-mb-px flex space-x-8">
-          {tabs.map(tab => (
+      {/* Progress Header with Visual Indicator */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sticky top-0 z-10">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="text-xl font-semibold text-gray-800 flex items-center gap-2">
+              <span className="text-2xl">{currentTab.icon}</span>
+              {currentTab.label}
+            </h2>
+            <p className="text-sm text-gray-500 mt-1">{currentTab.description}</p>
+          </div>
+          <div className="text-sm font-medium text-blue-600">
+            Step {activeTabIndex + 1} of {tabs.length}
+          </div>
+        </div>
+        
+        {/* Progress Bar */}
+        <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+          <div 
+            className="h-full bg-gradient-to-r from-blue-500 to-purple-600 rounded-full transition-all duration-300 ease-out"
+            style={{ width: `${((activeTabIndex + 1) / tabs.length) * 100}%` }}
+          />
+        </div>
+        
+        {/* Tab Indicators */}
+        <div className="flex justify-between mt-3">
+          {tabs.map((tab, idx) => (
             <button
               key={tab.id}
               type="button"
-              onClick={() => setActiveTab(tab.id)}
-              className={`
-                py-4 px-1 border-b-2 font-medium text-sm
-                ${activeTab === tab.id
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }
-              `}
+              onClick={() => {
+                if (validateCurrentTab()) setActiveTabIndex(idx)
+              }}
+              className={`text-xs font-medium transition-colors ${
+                idx <= activeTabIndex ? 'text-blue-600' : 'text-gray-400'
+              }`}
             >
-              {tab.label}
+              {tab.icon} {tab.label}
             </button>
           ))}
-        </nav>
+        </div>
       </div>
 
-      {/* Basic Info Tab */}
-      {activeTab === 'basic' && (
-        <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Course Name *
-              </label>
-              <input
-                type="text"
-                name="name"
-                value={formData.name}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Course Code
-              </label>
-              <input
-                type="text"
-                name="code"
-                value={formData.code}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                disabled={!!course?.code}
-              />
-              <p className="text-xs text-gray-500 mt-1">Auto-generated if left empty</p>
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Short Description (max 200 chars) *
-            </label>
-            <textarea
-              name="shortDescription"
-              value={formData.shortDescription}
-              onChange={handleChange}
-              rows={3}
-              maxLength={200}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required
-            />
-            <p className="text-xs text-gray-500 mt-1">
-              {formData.shortDescription.length}/200 characters
-            </p>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Full Description *
-            </label>
-            <textarea
-              name="fullDescription"
-              value={formData.fullDescription}
-              onChange={handleChange}
-              rows={8}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Category *
-              </label>
-              <input
-                type="text"
-                name="category"
-                value={formData.category}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Subcategory
-              </label>
-              <input
-                type="text"
-                name="subcategory"
-                value={formData.subcategory}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Course Level *
-              </label>
-              <select
-                name="level"
-                value={formData.level}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
-              >
-                {Object.values(COURSE_LEVELS).map(level => (
-                  <option key={level} value={level}>{level}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Language
-              </label>
-              <input
-                type="text"
-                name="language"
-                value={formData.language}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Duration *
-              </label>
-              <div className="flex gap-2">
-                <input
-                  type="number"
-                  name="duration.value"
-                  value={formData.duration.value}
-                  onChange={handleChange}
-                  className="w-1/2 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                />
-                <select
-                  name="duration.unit"
-                  value={formData.duration.unit}
-                  onChange={handleChange}
-                  className="w-1/2 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  {Object.values(COURSE_DURATION_UNITS).map(unit => (
-                    <option key={unit} value={unit}>{unit}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Tags (comma-separated)
-              </label>
-              <input
-                type="text"
-                value={formData.tags.join(', ')}
-                onChange={(e) => handleArrayChange('tags', e.target.value)}
-                placeholder="JavaScript, React, Node.js"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Skills to Learn (comma-separated)
-            </label>
-            <input
-              type="text"
-              value={formData.skillsToLearn.join(', ')}
-              onChange={(e) => handleArrayChange('skillsToLearn', e.target.value)}
-              placeholder="JavaScript, React, Node.js, MongoDB"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-        </div>
-      )}
-
-      {/* Course Content Tab */}
-      {activeTab === 'content' && (
-        <div className="space-y-6">
-          {/* Syllabus Section */}
-          <div className="border rounded-lg p-4">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-medium">Syllabus</h3>
-              <button
-                type="button"
-                onClick={addSyllabusModule}
-                className="px-3 py-1 bg-blue-500 text-white rounded-md text-sm hover:bg-blue-600"
-              >
-                Add Module
-              </button>
-            </div>
-            
-            {formData.syllabus.map((module, moduleIndex) => (
-              <div key={moduleIndex} className="mb-6 border-l-4 border-blue-500 pl-4">
-                <div className="flex justify-between items-start mb-3">
+      {/* Tab Content with Animation */}
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={activeTabIndex}
+          variants={pageVariants}
+          initial="initial"
+          animate="animate"
+          exit="exit"
+          transition={pageTransition}
+          className="min-h-[500px] bg-white rounded-xl shadow-sm border border-gray-100 p-6"
+        >
+          {/* Basic Info Tab */}
+          {activeTabIndex === 0 && (
+            <div className="space-y-5">
+              <div className="grid grid-cols-2 gap-5">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                    Course Name <span className="text-red-500">*</span>
+                  </label>
                   <input
                     type="text"
-                    placeholder="Module Name"
-                    value={module.moduleName}
-                    onChange={(e) => handleSyllabusChange(moduleIndex, 'moduleName', e.target.value)}
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 mr-2"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleChange}
+                    className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow ${
+                      validationErrors.name ? 'border-red-500 bg-red-50' : 'border-gray-300'
+                    }`}
+                    placeholder="e.g., Full Stack Web Development"
                   />
+                  {validationErrors.name && <p className="text-xs text-red-500 mt-1">{validationErrors.name}</p>}
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                    Course Code
+                  </label>
+                  <input
+                    type="text"
+                    name="code"
+                    value={formData.code}
+                    onChange={handleChange}
+                    disabled={!!course?.code}
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Auto-generated if empty"
+                  />
+                  <p className="text-xs text-gray-400 mt-1">Leave empty for auto-generation</p>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                  Short Description <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  name="shortDescription"
+                  value={formData.shortDescription}
+                  onChange={handleChange}
+                  rows={3}
+                  maxLength={200}
+                  className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                    validationErrors.shortDescription ? 'border-red-500 bg-red-50' : 'border-gray-300'
+                  }`}
+                  placeholder="Brief description of the course (max 200 chars)"
+                />
+                <div className="flex justify-between mt-1">
+                  {validationErrors.shortDescription && <p className="text-xs text-red-500">{validationErrors.shortDescription}</p>}
+                  <p className="text-xs text-gray-400 ml-auto">{formData.shortDescription.length}/200 characters</p>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                  Full Description <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  name="fullDescription"
+                  value={formData.fullDescription}
+                  onChange={handleChange}
+                  rows={6}
+                  className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                    validationErrors.fullDescription ? 'border-red-500 bg-red-50' : 'border-gray-300'
+                  }`}
+                  placeholder="Detailed course description with key highlights"
+                />
+                {validationErrors.fullDescription && <p className="text-xs text-red-500 mt-1">{validationErrors.fullDescription}</p>}
+              </div>
+
+              <div className="grid grid-cols-2 gap-5">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                    Category <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="category"
+                    value={formData.category}
+                    onChange={handleChange}
+                    className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                      validationErrors.category ? 'border-red-500 bg-red-50' : 'border-gray-300'
+                    }`}
+                    placeholder="e.g., Development, Design"
+                  />
+                  {validationErrors.category && <p className="text-xs text-red-500 mt-1">{validationErrors.category}</p>}
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                    Subcategory
+                  </label>
+                  <input
+                    type="text"
+                    name="subcategory"
+                    value={formData.subcategory}
+                    onChange={handleChange}
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="e.g., Web Development"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-5">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                    Course Level <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    name="level"
+                    value={formData.level}
+                    onChange={handleChange}
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    {Object.values(COURSE_LEVELS).map(level => (
+                      <option key={level} value={level}>{level}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                    Language
+                  </label>
+                  <input
+                    type="text"
+                    name="language"
+                    value={formData.language}
+                    onChange={handleChange}
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="e.g., English, Hindi"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-5">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                    Duration <span className="text-red-500">*</span>
+                  </label>
+                  <div className="flex gap-3">
+                    <input
+                      type="number"
+                      name="duration.value"
+                      value={formData.duration.value}
+                      onChange={handleChange}
+                      className={`w-1/2 px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                        validationErrors.duration ? 'border-red-500 bg-red-50' : 'border-gray-300'
+                      }`}
+                      min={1}
+                    />
+                    <select
+                      name="duration.unit"
+                      value={formData.duration.unit}
+                      onChange={handleChange}
+                      className="w-1/2 px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      {Object.values(COURSE_DURATION_UNITS).map(unit => (
+                        <option key={unit} value={unit}>{unit}</option>
+                      ))}
+                    </select>
+                  </div>
+                  {validationErrors.duration && <p className="text-xs text-red-500 mt-1">{validationErrors.duration}</p>}
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                    Tags (comma-separated)
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.tags.join(', ')}
+                    onChange={(e) => handleArrayChange('tags', e.target.value)}
+                    placeholder="JavaScript, React, Node.js"
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                  Skills to Learn (comma-separated)
+                </label>
+                <input
+                  type="text"
+                  value={formData.skillsToLearn.join(', ')}
+                  onChange={(e) => handleArrayChange('skillsToLearn', e.target.value)}
+                  placeholder="JavaScript, React, Node.js, MongoDB"
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Course Content Tab */}
+          {activeTabIndex === 1 && (
+            <div className="space-y-6">
+              {/* Syllabus Section */}
+              <div className="border rounded-xl overflow-hidden">
+                <div className="bg-gray-50 px-4 py-3 border-b flex justify-between items-center">
+                  <h3 className="font-semibold text-gray-800 flex items-center gap-2">
+                    <span>📖</span> Syllabus
+                  </h3>
                   <button
                     type="button"
-                    onClick={() => removeSyllabusModule(moduleIndex)}
-                    className="text-red-500 hover:text-red-700"
+                    onClick={addSyllabusModule}
+                    className="px-3 py-1.5 bg-blue-500 text-white rounded-lg text-sm hover:bg-blue-600 transition-colors flex items-center gap-1"
                   >
-                    Remove
+                    <span>+</span> Add Module
                   </button>
                 </div>
-                
-                <textarea
-                  placeholder="Module Description"
-                  value={module.moduleDescription}
-                  onChange={(e) => handleSyllabusChange(moduleIndex, 'moduleDescription', e.target.value)}
-                  rows={2}
-                  className="w-full mb-3 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                
-                <div className="mb-3">
-                  <input
-                    type="number"
-                    placeholder="Module Duration (hours)"
-                    value={module.moduleDuration}
-                    onChange={(e) => handleSyllabusChange(moduleIndex, 'moduleDuration', parseInt(e.target.value))}
-                    className="w-48 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                <div className="p-4 space-y-5 max-h-[500px] overflow-y-auto">
+                  {formData.syllabus.length === 0 && (
+                    <div className="text-center py-8 text-gray-400">
+                      No modules added yet. Click "Add Module" to start building your syllabus.
+                    </div>
+                  )}
+                  {formData.syllabus.map((module, moduleIndex) => (
+                    <div key={moduleIndex} className="border-l-4 border-blue-400 bg-white rounded-lg shadow-sm overflow-hidden">
+                      <div className="p-4">
+                        <div className="flex justify-between items-start gap-3 mb-3">
+                          <input
+                            type="text"
+                            placeholder="Module Name"
+                            value={module.moduleName}
+                            onChange={(e) => handleSyllabusChange(moduleIndex, 'moduleName', e.target.value)}
+                            className="flex-1 px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => removeSyllabusModule(moduleIndex)}
+                            className="text-red-400 hover:text-red-600 text-sm px-2"
+                          >
+                            ✕ Remove
+                          </button>
+                        </div>
+                        
+                        <textarea
+                          placeholder="Module Description"
+                          value={module.moduleDescription}
+                          onChange={(e) => handleSyllabusChange(moduleIndex, 'moduleDescription', e.target.value)}
+                          rows={2}
+                          className="w-full mb-3 px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                        />
+                        
+                        <div className="mb-3">
+                          <input
+                            type="number"
+                            placeholder="Module Duration (hours)"
+                            value={module.moduleDuration}
+                            onChange={(e) => handleSyllabusChange(moduleIndex, 'moduleDuration', parseInt(e.target.value) || 0)}
+                            className="w-48 px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                          />
+                        </div>
+                        
+                        <div className="mt-3">
+                          <div className="flex justify-between items-center mb-2">
+                            <h4 className="text-sm font-medium text-gray-600">Topics</h4>
+                            <button
+                              type="button"
+                              onClick={() => addTopic(moduleIndex)}
+                              className="text-xs text-blue-500 hover:text-blue-700 flex items-center gap-1"
+                            >
+                              <span>+</span> Add Topic
+                            </button>
+                          </div>
+                          
+                          <div className="space-y-2">
+                            {module.topics.map((topic, topicIndex) => (
+                              <div key={topicIndex} className="bg-gray-50 rounded-lg p-3">
+                                <input
+                                  type="text"
+                                  placeholder="Topic Name"
+                                  value={topic.topicName}
+                                  onChange={(e) => handleTopicChange(moduleIndex, topicIndex, 'topicName', e.target.value)}
+                                  className="w-full mb-2 px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                                />
+                                <textarea
+                                  placeholder="Topic Description"
+                                  value={topic.topicDescription}
+                                  onChange={(e) => handleTopicChange(moduleIndex, topicIndex, 'topicDescription', e.target.value)}
+                                  rows={2}
+                                  className="w-full mb-2 px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                                />
+                                <input
+                                  type="number"
+                                  placeholder="Duration (hours)"
+                                  value={topic.duration}
+                                  onChange={(e) => handleTopicChange(moduleIndex, topicIndex, 'duration', parseInt(e.target.value) || 0)}
+                                  className="w-40 px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                                />
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {validationErrors.syllabus && <p className="text-xs text-red-500 p-2 bg-red-50">{validationErrors.syllabus}</p>}
+              </div>
+
+              {/* Projects Section */}
+              <div className="border rounded-xl overflow-hidden">
+                <div className="bg-gray-50 px-4 py-3 border-b flex justify-between items-center">
+                  <h3 className="font-semibold text-gray-800 flex items-center gap-2">
+                    <span>🎯</span> Projects
+                  </h3>
+                  <button
+                    type="button"
+                    onClick={addProject}
+                    className="px-3 py-1.5 bg-blue-500 text-white rounded-lg text-sm hover:bg-blue-600 transition-colors"
+                  >
+                    + Add Project
+                  </button>
+                </div>
+                <div className="p-4 space-y-4 max-h-[400px] overflow-y-auto">
+                  {formData.projects.map((project, index) => (
+                    <div key={index} className="border rounded-lg p-4 bg-white">
+                      <div className="flex justify-between items-start mb-3">
+                        <input
+                          type="text"
+                          placeholder="Project Name"
+                          value={project.projectName}
+                          onChange={(e) => handleProjectChange(index, 'projectName', e.target.value)}
+                          className="flex-1 px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeProject(index)}
+                          className="ml-3 text-red-400 hover:text-red-600"
+                        >
+                          ✕ Remove
+                        </button>
+                      </div>
+                      
+                      <textarea
+                        placeholder="Project Description"
+                        value={project.projectDescription}
+                        onChange={(e) => handleProjectChange(index, 'projectDescription', e.target.value)}
+                        rows={2}
+                        className="w-full mb-3 px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                      
+                      <div className="grid grid-cols-2 gap-3 mb-3">
+                        <input
+                          type="text"
+                          placeholder="Technologies (comma-separated)"
+                          value={project.technologiesUsed.join(', ')}
+                          onChange={(e) => handleProjectChange(index, 'technologiesUsed', e.target.value.split(',').map(t => t.trim()))}
+                          className="px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                        />
+                        <select
+                          value={project.difficulty}
+                          onChange={(e) => handleProjectChange(index, 'difficulty', e.target.value)}
+                          className="px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                        >
+                          {Object.values(PROJECT_DIFFICULTY).map(diff => (
+                            <option key={diff} value={diff}>{diff}</option>
+                          ))}
+                        </select>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-3">
+                        <input
+                          type="number"
+                          placeholder="Duration (hours)"
+                          value={project.duration}
+                          onChange={(e) => handleProjectChange(index, 'duration', parseInt(e.target.value) || 0)}
+                          className="px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                        />
+                        <input
+                          type="url"
+                          placeholder="GitHub Link"
+                          value={project.githubLink}
+                          onChange={(e) => handleProjectChange(index, 'githubLink', e.target.value)}
+                          className="px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-5">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                    Learning Outcomes <span className="text-red-500">*</span>
+                  </label>
+                  <textarea
+                    value={formData.learningOutcomes.join('\n')}
+                    onChange={(e) => setFormData({ ...formData, learningOutcomes: e.target.value.split('\n').filter(l => l.trim()) })}
+                    rows={5}
+                    className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                      validationErrors.learningOutcomes ? 'border-red-500 bg-red-50' : 'border-gray-300'
+                    }`}
+                    placeholder="Build full-stack applications&#10;Understand MERN architecture&#10;Deploy to production"
                   />
+                  {validationErrors.learningOutcomes && <p className="text-xs text-red-500 mt-1">{validationErrors.learningOutcomes}</p>}
                 </div>
                 
-                <div className="ml-4">
-                  <div className="flex justify-between items-center mb-2">
-                    <h4 className="font-medium">Topics</h4>
-                    <button
-                      type="button"
-                      onClick={() => addTopic(moduleIndex)}
-                      className="text-sm text-blue-500 hover:text-blue-700"
-                    >
-                      + Add Topic
-                    </button>
-                  </div>
-                  
-                  {module.topics.map((topic, topicIndex) => (
-                    <div key={topicIndex} className="mb-3 pl-4 border-l-2 border-gray-200">
-                      <input
-                        type="text"
-                        placeholder="Topic Name"
-                        value={topic.topicName}
-                        onChange={(e) => handleTopicChange(moduleIndex, topicIndex, 'topicName', e.target.value)}
-                        className="w-full mb-2 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                    Prerequisites
+                  </label>
+                  <textarea
+                    value={formData.prerequisites.join('\n')}
+                    onChange={(e) => setFormData({ ...formData, prerequisites: e.target.value.split('\n').filter(p => p.trim()) })}
+                    rows={5}
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Basic HTML/CSS&#10;JavaScript fundamentals"
+                  />
+                </div>
+              </div>
+
+              {/* FAQ Section */}
+              <div className="border rounded-xl overflow-hidden">
+                <div className="bg-gray-50 px-4 py-3 border-b flex justify-between items-center">
+                  <h3 className="font-semibold text-gray-800 flex items-center gap-2">
+                    <span>❓</span> Frequently Asked Questions
+                  </h3>
+                  <button
+                    type="button"
+                    onClick={addFaq}
+                    className="px-3 py-1.5 bg-blue-500 text-white rounded-lg text-sm hover:bg-blue-600"
+                  >
+                    + Add FAQ
+                  </button>
+                </div>
+                <div className="p-4 space-y-3 max-h-[300px] overflow-y-auto">
+                  {formData.faqs.map((faq, index) => (
+                    <div key={index} className="border rounded-lg p-3 bg-white">
+                      <div className="flex justify-between items-start mb-2">
+                        <input
+                          type="text"
+                          placeholder="Question"
+                          value={faq.question}
+                          onChange={(e) => handleFaqChange(index, 'question', e.target.value)}
+                          className="flex-1 px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 mr-2"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeFaq(index)}
+                          className="text-red-400 hover:text-red-600"
+                        >
+                          ✕
+                        </button>
+                      </div>
                       <textarea
-                        placeholder="Topic Description"
-                        value={topic.topicDescription}
-                        onChange={(e) => handleTopicChange(moduleIndex, topicIndex, 'topicDescription', e.target.value)}
+                        placeholder="Answer"
+                        value={faq.answer}
+                        onChange={(e) => handleFaqChange(index, 'answer', e.target.value)}
                         rows={2}
-                        className="w-full mb-2 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                      <input
-                        type="number"
-                        placeholder="Duration (hours)"
-                        value={topic.duration}
-                        onChange={(e) => handleTopicChange(moduleIndex, topicIndex, 'duration', parseInt(e.target.value))}
-                        className="w-48 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
                     </div>
                   ))}
                 </div>
               </div>
-            ))}
-          </div>
-
-          {/* Projects Section */}
-          <div className="border rounded-lg p-4">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-medium">Projects</h3>
-              <button
-                type="button"
-                onClick={addProject}
-                className="px-3 py-1 bg-blue-500 text-white rounded-md text-sm hover:bg-blue-600"
-              >
-                Add Project
-              </button>
-            </div>
-            
-            {formData.projects.map((project, index) => (
-              <div key={index} className="mb-4 border rounded-lg p-3">
-                <div className="flex justify-between items-start mb-2">
-                  <input
-                    type="text"
-                    placeholder="Project Name"
-                    value={project.projectName}
-                    onChange={(e) => handleProjectChange(index, 'projectName', e.target.value)}
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => removeProject(index)}
-                    className="ml-2 text-red-500 hover:text-red-700"
-                  >
-                    Remove
-                  </button>
-                </div>
-                
-                <textarea
-                  placeholder="Project Description"
-                  value={project.projectDescription}
-                  onChange={(e) => handleProjectChange(index, 'projectDescription', e.target.value)}
-                  rows={2}
-                  className="w-full mb-2 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                
-                <div className="grid grid-cols-2 gap-2 mb-2">
-                  <input
-                    type="text"
-                    placeholder="Technologies (comma-separated)"
-                    value={project.technologiesUsed.join(', ')}
-                    onChange={(e) => handleProjectChange(index, 'technologiesUsed', e.target.value.split(',').map(t => t.trim()))}
-                    className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                  <select
-                    value={project.difficulty}
-                    onChange={(e) => handleProjectChange(index, 'difficulty', e.target.value)}
-                    className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    {Object.values(PROJECT_DIFFICULTY).map(diff => (
-                      <option key={diff} value={diff}>{diff}</option>
-                    ))}
-                  </select>
-                </div>
-                
-                <div className="grid grid-cols-2 gap-2">
-                  <input
-                    type="number"
-                    placeholder="Duration (hours)"
-                    value={project.duration}
-                    onChange={(e) => handleProjectChange(index, 'duration', parseInt(e.target.value))}
-                    className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                  <input
-                    type="url"
-                    placeholder="GitHub Link"
-                    value={project.githubLink}
-                    onChange={(e) => handleProjectChange(index, 'githubLink', e.target.value)}
-                    className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Learning Outcomes, Prerequisites, etc. */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Learning Outcomes (one per line)
-              </label>
-              <textarea
-                value={formData.learningOutcomes.join('\n')}
-                onChange={(e) => setFormData({ ...formData, learningOutcomes: e.target.value.split('\n').filter(l => l.trim()) })}
-                rows={5}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Build full-stack applications&#10;Understand MERN architecture&#10;Deploy to production"
-              />
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Prerequisites (one per line)
-              </label>
-              <textarea
-                value={formData.prerequisites.join('\n')}
-                onChange={(e) => setFormData({ ...formData, prerequisites: e.target.value.split('\n').filter(p => p.trim()) })}
-                rows={5}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Basic HTML/CSS&#10;JavaScript fundamentals"
-              />
-            </div>
-          </div>
-
-          {/* Career Opportunities */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Career Opportunities (one per line)
-            </label>
-            <textarea
-              value={formData.careerOpportunities.join('\n')}
-              onChange={(e) => setFormData({ ...formData, careerOpportunities: e.target.value.split('\n').filter(c => c.trim()) })}
-              rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Frontend Developer&#10;Full Stack Developer&#10;React Developer"
-            />
-          </div>
-
-          {/* FAQ Section */}
-          <div className="border rounded-lg p-4">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-medium">FAQ</h3>
-              <button
-                type="button"
-                onClick={addFaq}
-                className="px-3 py-1 bg-blue-500 text-white rounded-md text-sm hover:bg-blue-600"
-              >
-                Add FAQ
-              </button>
-            </div>
-            
-            {formData.faqs.map((faq, index) => (
-              <div key={index} className="mb-3 border rounded p-3">
-                <div className="flex justify-between items-start mb-2">
-                  <input
-                    type="text"
-                    placeholder="Question"
-                    value={faq.question}
-                    onChange={(e) => handleFaqChange(index, 'question', e.target.value)}
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 mr-2"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => removeFaq(index)}
-                    className="text-red-500 hover:text-red-700"
-                  >
-                    Remove
-                  </button>
-                </div>
-                <textarea
-                  placeholder="Answer"
-                  value={faq.answer}
-                  onChange={(e) => handleFaqChange(index, 'answer', e.target.value)}
-                  rows={2}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Pricing Tab */}
-      {activeTab === 'pricing' && (
-        <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Total Fees (₹) *
-              </label>
-              <input
-                type="number"
-                name="totalFees"
-                value={formData.totalFees}
-                onChange={handleChange}
-                min={0}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
-              />
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                <input
-                  type="checkbox"
-                  name="installmentAllowed"
-                  checked={formData.installmentAllowed}
-                  onChange={handleChange}
-                  className="mr-2"
-                />
-                Installment Allowed
-              </label>
-              {formData.installmentAllowed && (
-                <input
-                  type="number"
-                  name="numberOfInstallments"
-                  value={formData.numberOfInstallments}
-                  onChange={handleChange}
-                  min={1}
-                  className="mt-2 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              )}
-            </div>
-          </div>
-
-          <div className="border rounded-lg p-4">
-            <div className="flex items-center mb-4">
-              <input
-                type="checkbox"
-                checked={formData.discount.isDiscounted}
-                onChange={(e) => setFormData({
-                  ...formData,
-                  discount: { ...formData.discount, isDiscounted: e.target.checked }
-                })}
-                className="mr-2"
-              />
-              <label className="text-sm font-medium text-gray-700">Apply Discount</label>
-            </div>
-
-            {formData.discount.isDiscounted && (
-              <div className="space-y-3">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Discount Percentage (%)
-                  </label>
-                  <input
-                    type="number"
-                    name="discount.discountPercentage"
-                    value={formData.discount.discountPercentage}
-                    onChange={handleChange}
-                    min={0}
-                    max={100}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Valid Until
-                  </label>
-                  <input
-                    type="datetime-local"
-                    name="discount.validUntil"
-                    value={formData.discount.validUntil}
-                    onChange={handleChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                
-                {formData.discount.discountPercentage > 0 && (
-                  <div className="bg-blue-50 p-3 rounded">
-                    <p className="text-sm text-blue-800">
-                      Discounted Price: ₹{(formData.totalFees - (formData.totalFees * formData.discount.discountPercentage / 100)).toFixed(2)}
-                    </p>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-
-          <div className="border rounded-lg p-4">
-            <h3 className="text-lg font-medium mb-3">Certificate</h3>
-            <div className="flex items-center mb-3">
-              <input
-                type="checkbox"
-                name="certificateProvided"
-                checked={formData.certificateProvided}
-                onChange={handleChange}
-                className="mr-2"
-              />
-              <label className="text-sm font-medium text-gray-700">Certificate Provided</label>
-            </div>
-            
-            {formData.certificateProvided && (
-              <div className="space-y-3">
-                <select
-                  name="certificateDetails.certificateType"
-                  value={formData.certificateDetails.certificateType}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  {Object.values(CERTIFICATE_TYPES).map(type => (
-                    <option key={type} value={type}>{type}</option>
-                  ))}
-                </select>
-                
-                <input
-                  type="text"
-                  name="certificateDetails.issuingAuthority"
-                  placeholder="Issuing Authority"
-                  value={formData.certificateDetails.issuingAuthority}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                
-                <input
-                  type="text"
-                  name="certificateDetails.validity"
-                  placeholder="Validity"
-                  value={formData.certificateDetails.validity}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Media & SEO Tab */}
-      {activeTab === 'media' && (
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Thumbnail URL *
-            </label>
-            <input
-              type="url"
-              name="thumbnail"
-              value={formData.thumbnail}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required
-            />
-            {formData.thumbnail && (
-              <img src={formData.thumbnail} alt="Thumbnail preview" className="mt-2 h-32 object-cover rounded" />
-            )}
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              SEO Meta Title
-            </label>
-            <input
-              type="text"
-              name="seoMetadata.metaTitle"
-              value={formData.seoMetadata.metaTitle}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              SEO Meta Description
-            </label>
-            <textarea
-              name="seoMetadata.metaDescription"
-              value={formData.seoMetadata.metaDescription}
-              onChange={handleChange}
-              rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              SEO Keywords (comma-separated)
-            </label>
-            <input
-              type="text"
-              value={formData.seoMetadata.metaKeywords.join(', ')}
-              onChange={(e) => setFormData({
-                ...formData,
-                seoMetadata: {
-                  ...formData.seoMetadata,
-                  metaKeywords: e.target.value.split(',').map(k => k.trim())
-                }
-              })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-        </div>
-      )}
-
-      {/* Advanced Settings Tab */}
-      {activeTab === 'advanced' && (
-        <div className="space-y-4">
-          <div className="flex items-center">
-            <input
-              type="checkbox"
-              name="popularity.featured"
-              checked={formData.popularity.featured}
-              onChange={handleChange}
-              className="mr-2"
-            />
-            <label className="text-sm font-medium text-gray-700">Feature this course</label>
-          </div>
-
-          {formData.popularity.featured && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Featured Sort Order
-              </label>
-              <input
-                type="number"
-                name="popularity.sortOrder"
-                value={formData.popularity.sortOrder}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
             </div>
           )}
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Eligibility Criteria (one per line)
-            </label>
-            <textarea
-              value={formData.eligibilityCriteria.join('\n')}
-              onChange={(e) => setFormData({ ...formData, eligibilityCriteria: e.target.value.split('\n').filter(e => e.trim()) })}
-              rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Minimum 50% in 12th grade&#10;Basic computer knowledge"
-            />
-          </div>
+          {/* Pricing Tab */}
+          {activeTabIndex === 2 && (
+            <div className="space-y-5">
+              <div className="grid grid-cols-2 gap-5">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                    Total Fees (₹) <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    name="totalFees"
+                    value={formData.totalFees}
+                    onChange={handleChange}
+                    min={0}
+                    step={100}
+                    className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                      validationErrors.totalFees ? 'border-red-500 bg-red-50' : 'border-gray-300'
+                    }`}
+                  />
+                  {validationErrors.totalFees && <p className="text-xs text-red-500 mt-1">{validationErrors.totalFees}</p>}
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                    <input
+                      type="checkbox"
+                      name="installmentAllowed"
+                      checked={formData.installmentAllowed}
+                      onChange={handleChange}
+                      className="mr-2 rounded"
+                    />
+                    Installment Allowed
+                  </label>
+                  {formData.installmentAllowed && (
+                    <input
+                      type="number"
+                      name="numberOfInstallments"
+                      value={formData.numberOfInstallments}
+                      onChange={handleChange}
+                      min={1}
+                      className={`mt-2 w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                        validationErrors.numberOfInstallments ? 'border-red-500 bg-red-50' : 'border-gray-300'
+                      }`}
+                    />
+                  )}
+                  {validationErrors.numberOfInstallments && <p className="text-xs text-red-500 mt-1">{validationErrors.numberOfInstallments}</p>}
+                </div>
+              </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              What's Included (one per line)
-            </label>
-            <textarea
-              value={formData.whatIncludes.join('\n')}
-              onChange={(e) => setFormData({ ...formData, whatIncludes: e.target.value.split('\n').filter(w => w.trim()) })}
-              rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Video lectures&#10;Downloadable resources&#10;Certificate of completion"
-            />
-          </div>
+              <div className="border rounded-xl p-5">
+                <div className="flex items-center mb-4">
+                  <input
+                    type="checkbox"
+                    checked={formData.discount.isDiscounted}
+                    onChange={(e) => setFormData({
+                      ...formData,
+                      discount: { ...formData.discount, isDiscounted: e.target.checked }
+                    })}
+                    className="mr-2 w-4 h-4"
+                  />
+                  <label className="text-sm font-semibold text-gray-700">Apply Discount</label>
+                </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Features (one per line)
-            </label>
-            <textarea
-              value={formData.features.join('\n')}
-              onChange={(e) => setFormData({ ...formData, features: e.target.value.split('\n').filter(f => f.trim()) })}
-              rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Live projects&#10;Industry expert instructors&#10;Career guidance"
-            />
-          </div>
+                <AnimatePresence>
+                  {formData.discount.isDiscounted && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="space-y-3 overflow-hidden"
+                    >
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                          Discount Percentage (%)
+                        </label>
+                        <input
+                          type="number"
+                          name="discount.discountPercentage"
+                          value={formData.discount.discountPercentage}
+                          onChange={handleChange}
+                          min={0}
+                          max={100}
+                          className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                          Valid Until
+                        </label>
+                        <input
+                          type="datetime-local"
+                          name="discount.validUntil"
+                          value={formData.discount.validUntil}
+                          onChange={handleChange}
+                          className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                      
+                      {formData.discount.discountPercentage > 0 && formData.totalFees > 0 && (
+                        <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-3 rounded-lg border border-green-200">
+                          <p className="text-sm text-green-800 font-medium">
+                            💰 Discounted Price: ₹{(formData.totalFees - (formData.totalFees * formData.discount.discountPercentage / 100)).toFixed(2)}
+                          </p>
+                          <p className="text-xs text-green-600 mt-1">You save ₹{(formData.totalFees * formData.discount.discountPercentage / 100).toFixed(2)}</p>
+                        </div>
+                      )}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
 
-          <div className="flex items-center">
-            <input
-              type="checkbox"
-              name="isActive"
-              checked={formData.isActive}
-              onChange={handleChange}
-              className="mr-2"
-            />
-            <label className="text-sm font-medium text-gray-700">Course Active (visible to users)</label>
-          </div>
-        </div>
-      )}
+              <div className="border rounded-xl p-5">
+                <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                  <span>🏆</span> Certificate
+                </h3>
+                <div className="flex items-center mb-4">
+                  <input
+                    type="checkbox"
+                    name="certificateProvided"
+                    checked={formData.certificateProvided}
+                    onChange={handleChange}
+                    className="mr-2 w-4 h-4"
+                  />
+                  <label className="text-sm font-medium text-gray-700">Certificate Provided</label>
+                </div>
+                
+                {formData.certificateProvided && (
+                  <div className="space-y-3 pl-6">
+                    <select
+                      name="certificateDetails.certificateType"
+                      value={formData.certificateDetails.certificateType}
+                      onChange={handleChange}
+                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      {Object.values(CERTIFICATE_TYPES).map(type => (
+                        <option key={type} value={type}>{type}</option>
+                      ))}
+                    </select>
+                    
+                    <input
+                      type="text"
+                      name="certificateDetails.issuingAuthority"
+                      placeholder="Issuing Authority"
+                      value={formData.certificateDetails.issuingAuthority}
+                      onChange={handleChange}
+                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    
+                    <input
+                      type="text"
+                      name="certificateDetails.validity"
+                      placeholder="Validity (e.g., Lifetime, 2 Years)"
+                      value={formData.certificateDetails.validity}
+                      onChange={handleChange}
+                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
-      {/* Submit Buttons */}
-      <div className="flex justify-end space-x-3 pt-4 border-t">
+          {/* Media & SEO Tab */}
+          {activeTabIndex === 3 && (
+            <div className="space-y-5">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                  Thumbnail URL <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="url"
+                  name="thumbnail"
+                  value={formData.thumbnail}
+                  onChange={handleChange}
+                  className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                    validationErrors.thumbnail ? 'border-red-500 bg-red-50' : 'border-gray-300'
+                  }`}
+                  placeholder="https://example.com/course-thumbnail.jpg"
+                />
+                {validationErrors.thumbnail && <p className="text-xs text-red-500 mt-1">{validationErrors.thumbnail}</p>}
+                {formData.thumbnail && (
+                  <div className="mt-3">
+                    <img src={formData.thumbnail} alt="Thumbnail preview" className="h-32 object-cover rounded-lg shadow-sm border" />
+                  </div>
+                )}
+              </div>
+
+              <div className="border-t pt-4">
+                <h3 className="text-md font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                  <span>🔍</span> SEO Settings
+                </h3>
+                
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                      SEO Meta Title
+                    </label>
+                    <input
+                      type="text"
+                      name="seoMetadata.metaTitle"
+                      value={formData.seoMetadata.metaTitle}
+                      onChange={handleChange}
+                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="Course title for search engines"
+                    />
+                    <p className="text-xs text-gray-400 mt-1">Recommended: 50-60 characters</p>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                      SEO Meta Description
+                    </label>
+                    <textarea
+                      name="seoMetadata.metaDescription"
+                      value={formData.seoMetadata.metaDescription}
+                      onChange={handleChange}
+                      rows={3}
+                      maxLength={160}
+                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="Brief description for search results"
+                    />
+                    <p className="text-xs text-gray-400 mt-1">{formData.seoMetadata.metaDescription.length}/160 characters</p>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                      SEO Keywords (comma-separated)
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.seoMetadata.metaKeywords.join(', ')}
+                      onChange={(e) => setFormData({
+                        ...formData,
+                        seoMetadata: {
+                          ...formData.seoMetadata,
+                          metaKeywords: e.target.value.split(',').map(k => k.trim())
+                        }
+                      })}
+                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="web development, javascript, react, full stack"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Advanced Settings Tab */}
+          {activeTabIndex === 4 && (
+            <div className="space-y-5">
+              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+                <div>
+                  <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                    <span>⭐</span> Feature this course
+                  </label>
+                  <p className="text-xs text-gray-500 mt-1">Featured courses appear prominently on the homepage</p>
+                </div>
+                <input
+                  type="checkbox"
+                  name="popularity.featured"
+                  checked={formData.popularity.featured}
+                  onChange={handleChange}
+                  className="w-5 h-5 rounded"
+                />
+              </div>
+
+              {formData.popularity.featured && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="p-4 border rounded-xl"
+                >
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                    Featured Sort Order
+                  </label>
+                  <input
+                    type="number"
+                    name="popularity.sortOrder"
+                    value={formData.popularity.sortOrder}
+                    onChange={handleChange}
+                    min={0}
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  <p className="text-xs text-gray-400 mt-1">Lower numbers appear first</p>
+                </motion.div>
+              )}
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                  Eligibility Criteria (one per line)
+                </label>
+                <textarea
+                  value={formData.eligibilityCriteria.join('\n')}
+                  onChange={(e) => setFormData({ ...formData, eligibilityCriteria: e.target.value.split('\n').filter(e => e.trim()) })}
+                  rows={3}
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Minimum 50% in 12th grade&#10;Basic computer knowledge"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                  What's Included (one per line)
+                </label>
+                <textarea
+                  value={formData.whatIncludes.join('\n')}
+                  onChange={(e) => setFormData({ ...formData, whatIncludes: e.target.value.split('\n').filter(w => w.trim()) })}
+                  rows={3}
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Video lectures&#10;Downloadable resources&#10;Certificate of completion"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                  Features (one per line)
+                </label>
+                <textarea
+                  value={formData.features.join('\n')}
+                  onChange={(e) => setFormData({ ...formData, features: e.target.value.split('\n').filter(f => f.trim()) })}
+                  rows={3}
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Live projects&#10;Industry expert instructors&#10;Career guidance"
+                />
+              </div>
+
+              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+                <div>
+                  <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                    <span>👁️</span> Course Status
+                  </label>
+                  <p className="text-xs text-gray-500 mt-1">Make course visible/invisible to users</p>
+                </div>
+                <input
+                  type="checkbox"
+                  name="isActive"
+                  checked={formData.isActive}
+                  onChange={handleChange}
+                  className="w-5 h-5 rounded"
+                />
+              </div>
+            </div>
+          )}
+        </motion.div>
+      </AnimatePresence>
+
+      {/* Navigation Buttons - Only Next/Back, Save only on last page */}
+      <div className="flex justify-between pt-4 border-t">
         <button
           type="button"
-          onClick={() => onSuccess()}
-          className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+          onClick={handleBack}
+          disabled={activeTabIndex === 0}
+          className={`px-5 py-2.5 rounded-lg font-medium transition-all flex items-center gap-2 ${
+            activeTabIndex === 0
+              ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+              : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
+          }`}
         >
-          Cancel
+          <span>←</span> Back
         </button>
-        <button
-          type="submit"
-          disabled={loading}
-          className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:opacity-50"
-        >
-          {loading ? 'Saving...' : (course?._id ? 'Update Course' : 'Create Course')}
-        </button>
+        
+        <div className="flex gap-3">
+          <button
+            type="button"
+            onClick={() => onSuccess()}
+            className="px-5 py-2.5 border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50 transition-colors"
+          >
+            Cancel
+          </button>
+          
+          {activeTabIndex === tabs.length - 1 ? (
+            <button
+              type="submit"
+              disabled={loading}
+              className="px-6 py-2.5 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg font-medium hover:from-blue-600 hover:to-purple-700 transition-all disabled:opacity-50 flex items-center gap-2 shadow-sm"
+            >
+              {loading ? (
+                <>
+                  <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                  Saving...
+                </>
+              ) : (
+                course?._id ? 'Update Course' : 'Create Course'
+              )}
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={handleNext}
+              className="px-5 py-2.5 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition-colors flex items-center gap-2"
+            >
+              Next <span>→</span>
+            </button>
+          )}
+        </div>
       </div>
     </form>
   )
