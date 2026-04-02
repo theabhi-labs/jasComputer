@@ -134,19 +134,16 @@ class CourseController extends BaseController {
     }
   }
 
-  // Get single course by ID or slug
   async getCourseByIdOrSlug(req, res) {
     try {
       const { id } = req.params;
       let course;
       
-      // Check if it's a slug or ObjectId
       if (id.match(/^[0-9a-fA-F]{24}$/)) {
         course = await Course.findById(id)
           .populate('instructors', 'name email profilePicture bio')
           .populate('createdBy', 'name');
       } else {
-        // Find by slug
         course = await Course.findOne({ slug: id, isActive: true })
           .populate('instructors', 'name email profilePicture bio')
           .populate('createdBy', 'name');
@@ -156,10 +153,27 @@ class CourseController extends BaseController {
         return this.error(res, MESSAGES.ERROR.NOT_FOUND, 404);
       }
       
-      // Increment views
-      await Course.findByIdAndUpdate(course._id, { $inc: { 'popularity.views': 1 } });
+      const courseObject = course.toObject();
       
-      // Get batches for this course
+      courseObject.syllabus = courseObject.syllabus || [];
+      courseObject.projects = courseObject.projects || [];
+      courseObject.faqs = courseObject.faqs || [];
+      courseObject.images = courseObject.images || [];
+      courseObject.careerPaths = courseObject.careerPaths || [];
+      courseObject.skillsToLearn = courseObject.skillsToLearn || [];
+      courseObject.learningOutcomes = courseObject.learningOutcomes || [];
+      courseObject.prerequisites = courseObject.prerequisites || [];
+      
+      console.log("📦 SENDING COURSE WITH:");
+      console.log("- Name:", courseObject.name);
+      console.log("- Syllabus:", courseObject.syllabus.length);
+      console.log("- Projects:", courseObject.projects.length);
+      console.log("- FAQs:", courseObject.faqs.length);
+      console.log("- Images:", courseObject.images.length);
+      
+      Course.findByIdAndUpdate(course._id, { $inc: { 'popularity.views': 1 } })
+        .catch(err => console.error('Error incrementing views:', err));
+      
       const batches = await Batch.find({ 
         course: course._id, 
         isActive: true,
@@ -169,7 +183,6 @@ class CourseController extends BaseController {
         .sort({ startDate: 1 })
         .lean();
       
-      // Get related courses
       const relatedCourses = await Course.find({
         _id: { $ne: course._id },
         category: course.category,
@@ -179,15 +192,15 @@ class CourseController extends BaseController {
         .limit(4)
         .lean();
       
-      // Enhance course with computed fields
       const enhancedCourse = {
-        ...course.toObject(),
+        ...courseObject,
         currentPrice: course.getCurrentPrice ? course.getCurrentPrice() : course.totalFees,
         isDiscountValid: course.isDiscountValid ? course.isDiscountValid() : false,
         discountPercentage: course.getDiscountPercentage ? course.getDiscountPercentage() : 0,
         durationDisplay: course.getDurationDisplay ? course.getDurationDisplay() : `${course.duration.value} ${course.duration.unit}`,
         totalSyllabusDuration: course.getTotalSyllabusDuration ? course.getTotalSyllabusDuration() : 0,
-        totalProjectsCount: course.getTotalProjectsCount ? course.getTotalProjectsCount() : course.projects?.length || 0
+        totalProjectsCount: course.projects?.length || 0,
+        courseUrl: `/courses/${course.slug}`
       };
       
       return this.success(res, { 
@@ -215,10 +228,8 @@ class CourseController extends BaseController {
         return this.error(res, MESSAGES.ERROR.NOT_FOUND, 404);
       }
       
-      // Increment views
       await Course.findByIdAndUpdate(course._id, { $inc: { 'popularity.views': 1 } });
       
-      // Get batches for this course
       const batches = await Batch.find({ 
         course: course._id, 
         isActive: true,
@@ -228,7 +239,6 @@ class CourseController extends BaseController {
         .sort({ startDate: 1 })
         .lean();
       
-      // Get related courses
       const relatedCourses = await Course.find({
         _id: { $ne: course._id },
         category: course.category,
@@ -238,7 +248,6 @@ class CourseController extends BaseController {
         .limit(4)
         .lean();
       
-      // Enhance course with computed fields
       const enhancedCourse = {
         ...course.toObject(),
         currentPrice: course.getCurrentPrice ? course.getCurrentPrice() : course.totalFees,
@@ -348,7 +357,6 @@ class CourseController extends BaseController {
     try {
       const courseData = req.body;
       
-      // Check if course exists
       const existing = await Course.findOne({ 
         $or: [
           { name: courseData.name },
@@ -360,7 +368,6 @@ class CourseController extends BaseController {
         return this.error(res, 'Course with this name or code already exists', 400);
       }
       
-      // Validate syllabus structure if provided
       if (courseData.syllabus && courseData.syllabus.length > 0) {
         for (const module of courseData.syllabus) {
           if (!module.moduleName) {
@@ -376,7 +383,6 @@ class CourseController extends BaseController {
         }
       }
       
-      // Validate discount if provided
       if (courseData.discount && courseData.discount.isDiscounted) {
         if (courseData.discount.discountPercentage > 100 || courseData.discount.discountPercentage < 0) {
           return this.error(res, 'Discount percentage must be between 0 and 100', 400);
@@ -385,7 +391,6 @@ class CourseController extends BaseController {
       
       courseData.createdBy = req.user._id;
       
-      // Add instructor if provided in request
       if (req.body.instructors && req.body.instructors.length > 0) {
         courseData.instructors = req.body.instructors;
       }
@@ -399,66 +404,134 @@ class CourseController extends BaseController {
       return this.error(res, error.message, 500);
     }
   }
-async updateCourse(req, res) {
-  try {
-    const { id } = req.params;
-    const course = await Course.findById(id);
-    if (!course) return this.error(res, 'Course not found', 404);
 
-    // Name duplication check
-    if (req.body.name && req.body.name !== course.name) {
-      const existingName = await Course.findOne({ name: req.body.name });
-      if (existingName) return this.error(res, 'Course name already exists', 400);
-    }
-
-    // Code duplication check
-    if (req.body.code && req.body.code !== course.code) {
-      const existingCode = await Course.findOne({ code: req.body.code });
-      if (existingCode) return this.error(res, 'Course code already exists', 400);
-    }
-
-    // Discount validation & merge
-    if (req.body.discount) {
-      const discount = req.body.discount;
-      if (discount.isDiscounted) {
-        if (
-          typeof discount.discountPercentage !== 'number' ||
-          discount.discountPercentage < 0 ||
-          discount.discountPercentage > 100
-        ) {
-          return this.error(res, 'Discount percentage must be between 0 and 100', 400);
-        }
+  // ✅ FIXED UPDATE COURSE METHOD
+  async updateCourse(req, res) {
+    try {
+      console.log("=".repeat(50));
+      console.log("🔵 UPDATE COURSE CALLED");
+      console.log("=".repeat(50));
+      
+      const { id } = req.params;
+      console.log("ID:", id);
+      console.log("Request Body:", JSON.stringify(req.body, null, 2));
+      
+      const course = await Course.findById(id);
+      if (!course) {
+        return this.error(res, 'Course not found', 404);
       }
-      course.discount = {
-        isDiscounted: discount.isDiscounted ?? false,
-        discountPercentage: discount.discountPercentage ?? 0,
-        ...discount
-      };
-    }
-
-    // Allowed fields
-    const allowedFields = [
-      'name', 'code', 'description', 'syllabus', 
-      'projects', 'faqs', 'media', 'seo', 'price'
-    ];
-    allowedFields.forEach((field) => {
-      if (req.body[field] !== undefined) {
-        // Ensure arrays/objects are at least empty if not provided
-        if (['syllabus', 'projects', 'faqs'].includes(field) && !Array.isArray(req.body[field])) {
-          course[field] = [];
-        } else {
-          course[field] = req.body[field];
-        }
+      
+      console.log("💰 Current totalFees:", course.totalFees);
+      
+      let updated = false;
+      
+      // Update each field that is provided
+      if (req.body.totalFees !== undefined) {
+        course.totalFees = Number(req.body.totalFees);
+        updated = true;
+        console.log("💰 Updated totalFees to:", course.totalFees);
       }
-    });
-
-    await course.save();
-    return this.success(res, { course }, 'Course updated successfully');
-  } catch (error) {
-    console.error('Update course error:', error);
-    return this.error(res, error.message, 500);
+      
+      if (req.body.level !== undefined) {
+        course.level = req.body.level;
+        updated = true;
+        console.log("📊 Updated level to:", course.level);
+      }
+      
+      if (req.body.shortDescription !== undefined) {
+        course.shortDescription = req.body.shortDescription;
+        updated = true;
+        console.log("📝 Updated shortDescription");
+      }
+      
+      if (req.body.fullDescription !== undefined) {
+        course.fullDescription = req.body.fullDescription;
+        updated = true;
+        console.log("📝 Updated fullDescription");
+      }
+      
+      if (req.body.skillsToLearn !== undefined) {
+        course.skillsToLearn = req.body.skillsToLearn;
+        updated = true;
+        console.log("🎯 Updated skillsToLearn");
+      }
+      
+      if (req.body.learningOutcomes !== undefined) {
+        course.learningOutcomes = req.body.learningOutcomes;
+        updated = true;
+        console.log("📚 Updated learningOutcomes");
+      }
+      
+      if (req.body.prerequisites !== undefined) {
+        course.prerequisites = req.body.prerequisites;
+        updated = true;
+        console.log("📋 Updated prerequisites");
+      }
+      
+      if (req.body.tags !== undefined) {
+        course.tags = req.body.tags;
+        updated = true;
+        console.log("🏷️ Updated tags");
+      }
+      
+      if (req.body.features !== undefined) {
+        course.features = req.body.features;
+        updated = true;
+        console.log("✨ Updated features");
+      }
+      
+      if (req.body.benefits !== undefined) {
+        course.benefits = req.body.benefits;
+        updated = true;
+        console.log("🎁 Updated benefits");
+      }
+      
+      if (req.body.whatIncludes !== undefined) {
+        course.whatIncludes = req.body.whatIncludes;
+        updated = true;
+        console.log("📦 Updated whatIncludes");
+      }
+      
+      if (req.body.seoMetadata !== undefined) {
+        course.seoMetadata = req.body.seoMetadata;
+        updated = true;
+        console.log("🔍 Updated seoMetadata");
+      }
+      
+      if (!updated) {
+        console.log("⚠️ No fields to update");
+        return this.success(res, { course }, 'No changes made');
+      }
+      
+      console.log("💾 Saving to database...");
+      await course.save();
+      console.log("✅ Save successful!");
+      
+      // Recalculate discount if needed
+      if (course.discount?.isDiscounted && course.discount.discountPercentage > 0) {
+        const discountedAmount = course.totalFees * (course.discount.discountPercentage / 100);
+        course.discount.discountedPrice = Math.round(course.totalFees - discountedAmount);
+        await course.save();
+        console.log("💰 Discount recalculated:", course.discount.discountedPrice);
+      }
+      
+      const freshCourse = await Course.findById(id)
+        .populate('instructors', 'name email profilePicture bio')
+        .populate('createdBy', 'name');
+      
+      console.log("💰 Final totalFees:", freshCourse.totalFees);
+      console.log("=".repeat(50));
+      
+      return this.success(res, { 
+        course: freshCourse 
+      }, 'Course updated successfully');
+      
+    } catch (error) {
+      console.error("❌ Update error:", error);
+      console.error("Error stack:", error.stack);
+      return this.error(res, error.message || 'Failed to update course', 500);
+    }
   }
-}
 
   // Update course rating
   async updateCourseRating(req, res) {
@@ -475,7 +548,6 @@ async updateCourse(req, res) {
         return this.error(res, MESSAGES.ERROR.NOT_FOUND, 404);
       }
       
-      // Calculate new average rating
       const newAverage = (course.rating.average * course.rating.count + rating) / (course.rating.count + 1);
       
       course.rating.average = parseFloat(newAverage.toFixed(1));
@@ -516,7 +588,6 @@ async updateCourse(req, res) {
     try {
       const { id } = req.params;
       
-      // Check if batches exist
       const batches = await Batch.findOne({ course: id });
       if (batches) {
         return this.error(res, 'Cannot delete course with existing batches', 400);
@@ -562,6 +633,6 @@ async updateCourse(req, res) {
   }
 }
 
-// Create and export a single instance
+// ✅ Create and export a single instance (ONLY THIS)
 const courseController = new CourseController();
 export default courseController;

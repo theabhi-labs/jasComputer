@@ -23,7 +23,6 @@ const courseSchema = new mongoose.Schema({
     trim: true
   },
   
-  // Short description for cards/listings
   shortDescription: {
     type: String,
     required: true,
@@ -31,26 +30,21 @@ const courseSchema = new mongoose.Schema({
     trim: true
   },
   
-  // Full detailed description
   fullDescription: {
     type: String,
     required: true,
     trim: true
   },
   
-  // Thumbnail image
   thumbnail: {
     type: String,
     default: ''
   },
   
-  // Additional images/gallery
-  images: [
-  {
+  images: [{
     url: { type: String, required: true },
     caption: { type: String }
-  }
-],
+  }],
   
   duration: {
     value: {
@@ -80,13 +74,11 @@ const courseSchema = new mongoose.Schema({
     default: 1
   },
   
-  // Skills students will learn
   skillsToLearn: [{
     type: String,
     trim: true
   }],
   
-  // Syllabus structured with modules and topics
   syllabus: {
     type: [{
       moduleName: {
@@ -129,13 +121,11 @@ const courseSchema = new mongoose.Schema({
     default: []
   },
   
-  // Career opportunities after course completion
   careerOpportunities: [{
     type: String,
     trim: true
   }],
   
-  // Job roles/career paths
   careerPaths: [{
     role: {
       type: String,
@@ -151,7 +141,6 @@ const courseSchema = new mongoose.Schema({
     }
   }],
   
-  // Certificate provided or not
   certificateProvided: {
     type: Boolean,
     default: true
@@ -180,14 +169,12 @@ const courseSchema = new mongoose.Schema({
     default: null
   },
   
-  // Total projects
   totalProjects: {
     type: Number,
     default: 0,
     min: 0
   },
   
-  // Projects details
   projects: [{
     projectName: {
       type: String,
@@ -221,39 +208,33 @@ const courseSchema = new mongoose.Schema({
     }
   }],
   
-  // Learning outcomes
   learningOutcomes: [{
     type: String,
     trim: true
   }],
   
-  // Prerequisites
   prerequisites: [{
     type: String,
     trim: true
   }],
   
-  // Target audience
   targetAudience: [{
     type: String,
     trim: true
   }],
   
-  // Course level
   level: {
     type: String,
     enum: ['Beginner', 'Intermediate', 'Advanced', 'All Levels'],
     default: 'Beginner'
   },
   
-  // Language
   language: {
     type: String,
     default: 'English',
     trim: true
   },
   
-  // Rating and reviews
   rating: {
     average: {
       type: Number,
@@ -267,25 +248,21 @@ const courseSchema = new mongoose.Schema({
     }
   },
   
-  // Course features
   features: [{
     type: String,
     trim: true
   }],
   
-  // Course benefits
   benefits: [{
     type: String,
     trim: true
   }],
   
-  // What's included
   whatIncludes: [{
     type: String,
     trim: true
   }],
   
-  // FAQ section
   faqs: [{
     question: {
       type: String,
@@ -299,7 +276,6 @@ const courseSchema = new mongoose.Schema({
     }
   }],
   
-  // SEO metadata
   seoMetadata: {
     metaTitle: {
       type: String,
@@ -319,7 +295,6 @@ const courseSchema = new mongoose.Schema({
     }
   },
   
-  // Popularity and sorting
   popularity: {
     views: {
       type: Number,
@@ -339,7 +314,6 @@ const courseSchema = new mongoose.Schema({
     }
   },
   
-  // Discount and offers
   discount: {
     isDiscounted: {
       type: Boolean,
@@ -360,7 +334,6 @@ const courseSchema = new mongoose.Schema({
     }
   },
   
-  // Batch and schedule
   batches: [{
     batchName: {
       type: String,
@@ -386,19 +359,16 @@ const courseSchema = new mongoose.Schema({
     }
   }],
   
-  // Instructor details
   instructors: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
   }],
   
-  // Tags for categorization
   tags: [{
     type: String,
     trim: true
   }],
   
-  // Category and subcategory
   category: {
     type: String,
     trim: true,
@@ -415,7 +385,6 @@ const courseSchema = new mongoose.Schema({
     trim: true
   },
   
-  // Additional eligibility criteria
   eligibilityCriteria: [{
     type: String,
     trim: true
@@ -440,60 +409,78 @@ const courseSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Function to generate unique slug
-const generateUniqueSlug = async (baseSlug, model, counter = 0) => {
+// Helper function to generate unique slug
+const generateUniqueSlug = async (baseSlug, model, excludeId = null, counter = 0) => {
   const slug = counter === 0 ? baseSlug : `${baseSlug}-${counter}`;
-  const existing = await model.findOne({ slug });
+  const query = { slug };
+  if (excludeId) {
+    query._id = { $ne: excludeId };
+  }
+  const existing = await model.findOne(query);
   if (existing) {
-    return generateUniqueSlug(baseSlug, model, counter + 1);
+    return generateUniqueSlug(baseSlug, model, excludeId, counter + 1);
   }
   return slug;
 };
 
-// Generate slug and course code before save
+// Pre-save middleware
 courseSchema.pre('save', async function(next) {
   try {
-    // Generate slug if name is modified or new
-    if (this.isModified('name') || this.isNew) {
+    // Handle slug generation
+    if (this.isNew) {
+      // New course: generate slug from name
       const baseSlug = slugify(this.name, {
         lower: true,
         strict: true,
         remove: /[*+~.()'"!:@]/g
       });
-      
-      this.slug = await generateUniqueSlug(baseSlug, this.constructor);
+      this.slug = await generateUniqueSlug(baseSlug, this.constructor, null);
+    } else if (this.isModified('name')) {
+      // Existing course: name changed, generate new slug
+      const baseSlug = slugify(this.name, {
+        lower: true,
+        strict: true,
+        remove: /[*+~.()'"!:@]/g
+      });
+      this.slug = await generateUniqueSlug(baseSlug, this.constructor, this._id);
     }
     
-    // Generate course code
+    // Generate course code for new courses only
     if (this.isNew && !this.code) {
       const Course = mongoose.model('Course');
       const count = await Course.countDocuments();
       this.code = `CRS${String(count + 1).padStart(4, '0')}`;
     }
     
-    // Auto-generate SEO metadata if not provided
+    // Auto-generate SEO metadata
     if (this.isNew || this.isModified('name') || this.isModified('shortDescription')) {
-      if (!this.seoMetadata || !this.seoMetadata.metaTitle) {
-        this.seoMetadata = this.seoMetadata || {};
+      if (!this.seoMetadata) {
+        this.seoMetadata = {};
+      }
+      
+      if (!this.seoMetadata.metaTitle && this.name) {
         this.seoMetadata.metaTitle = this.name;
       }
-      if (!this.seoMetadata || !this.seoMetadata.metaDescription) {
-        this.seoMetadata = this.seoMetadata || {};
-        this.seoMetadata.metaDescription = this.shortDescription?.substring(0, 160) || '';
+      
+      if (!this.seoMetadata.metaDescription && this.shortDescription) {
+        this.seoMetadata.metaDescription = this.shortDescription.substring(0, 160);
       }
-      if (!this.seoMetadata || !this.seoMetadata.metaKeywords && this.tags?.length) {
-        this.seoMetadata = this.seoMetadata || {};
-        this.seoMetadata.metaKeywords = this.tags.slice(0, 10);
+      
+      if (!this.seoMetadata.metaKeywords && this.tags?.length) {
+        this.seoMetadata.metaKeywords = [...this.tags.slice(0, 10)];
       }
     }
     
-    // Calculate discounted price if discount is active
-    if (this.discount && this.discount.isDiscounted && this.discount.discountPercentage > 0) {
-      this.discount.discountedPrice = this.totalFees - (this.totalFees * this.discount.discountPercentage / 100);
+    // Calculate discounted price
+    if (this.discount?.isDiscounted && this.discount.discountPercentage > 0) {
+      const discountedAmount = this.totalFees * (this.discount.discountPercentage / 100);
+      this.discount.discountedPrice = Math.round(this.totalFees - discountedAmount);
+    } else if (this.discount && !this.discount.isDiscounted) {
+      this.discount.discountedPrice = 0;
     }
     
-    // Auto-update totalProjects based on projects array
-    if (this.projects && this.projects.length !== this.totalProjects) {
+    // Sync total projects count
+    if (this.projects) {
       this.totalProjects = this.projects.length;
     }
     
@@ -503,47 +490,39 @@ courseSchema.pre('save', async function(next) {
   }
 });
 
-// Get duration display
+// Methods
 courseSchema.methods.getDurationDisplay = function() {
   return `${this.duration.value} ${this.duration.unit}`;
 };
 
-// Get formatted price with discount
 courseSchema.methods.getCurrentPrice = function() {
-  if (this.discount && this.discount.isDiscounted && this.discount.discountedPrice > 0) {
+  if (this.discount?.isDiscounted && this.discount.discountedPrice > 0 && this.isDiscountValid()) {
     return this.discount.discountedPrice;
   }
   return this.totalFees;
 };
 
-// Get discount percentage
 courseSchema.methods.getDiscountPercentage = function() {
-  if (this.discount && this.discount.isDiscounted) {
+  if (this.discount?.isDiscounted) {
     return this.discount.discountPercentage;
   }
   return 0;
 };
 
-// Check if discount is valid
 courseSchema.methods.isDiscountValid = function() {
   if (!this.discount || !this.discount.isDiscounted) return false;
   if (this.discount.validUntil && this.discount.validUntil < new Date()) return false;
   return true;
 };
 
-// Get total syllabus duration
 courseSchema.methods.getTotalSyllabusDuration = function() {
   let totalDuration = 0;
-  if (this.syllabus && this.syllabus.length) {
+  if (this.syllabus?.length) {
     this.syllabus.forEach(module => {
-      if (module.moduleDuration) {
-        totalDuration += module.moduleDuration;
-      }
-      if (module.topics && module.topics.length) {
+      if (module.moduleDuration) totalDuration += module.moduleDuration;
+      if (module.topics?.length) {
         module.topics.forEach(topic => {
-          if (topic.duration) {
-            totalDuration += topic.duration;
-          }
+          if (topic.duration) totalDuration += topic.duration;
         });
       }
     });
@@ -551,29 +530,20 @@ courseSchema.methods.getTotalSyllabusDuration = function() {
   return totalDuration;
 };
 
-// Get total projects count
-courseSchema.methods.getTotalProjectsCount = function() {
-  return this.projects ? this.projects.length : 0;
-};
-
-// Increment views
 courseSchema.methods.incrementViews = async function() {
   this.popularity.views += 1;
   await this.save();
 };
 
-// Increment enrollments
 courseSchema.methods.incrementEnrollments = async function() {
   this.popularity.enrollments += 1;
   await this.save();
 };
 
-// Get course URL
 courseSchema.methods.getCourseUrl = function() {
   return `/courses/${this.slug}`;
 };
 
-// Get full details including computed fields
 courseSchema.methods.getFullDetails = function() {
   return {
     ...this.toObject(),
@@ -582,17 +552,16 @@ courseSchema.methods.getFullDetails = function() {
     discountPercentage: this.getDiscountPercentage(),
     isDiscountValid: this.isDiscountValid(),
     totalSyllabusDuration: this.getTotalSyllabusDuration(),
-    totalProjectsCount: this.getTotalProjectsCount(),
+    totalProjectsCount: this.totalProjects,
     courseUrl: this.getCourseUrl()
   };
 };
 
-// Static method to find by slug
+// Statics
 courseSchema.statics.findBySlug = function(slug) {
   return this.findOne({ slug, isActive: true });
 };
 
-// Static method to find by slug with full details
 courseSchema.statics.findBySlugWithDetails = async function(slug) {
   const course = await this.findOne({ slug, isActive: true })
     .populate('instructors', 'name email profilePicture bio')
@@ -604,7 +573,6 @@ courseSchema.statics.findBySlugWithDetails = async function(slug) {
   return null;
 };
 
-// Static method to get related courses
 courseSchema.statics.getRelatedCourses = async function(courseId, category, limit = 4) {
   return this.find({
     _id: { $ne: courseId },
@@ -616,7 +584,70 @@ courseSchema.statics.getRelatedCourses = async function(courseId, category, limi
     .lean();
 };
 
-// Indexes for better performance
+// Update course with validation
+courseSchema.statics.updateCourse = async function(courseId, updateData) {
+  const course = await this.findById(courseId);
+  if (!course) {
+    throw new Error('Course not found');
+  }
+  
+  // Prevent direct modification of protected fields
+  const protectedFields = ['slug', 'code', '_id', '__v', 'createdAt'];
+  protectedFields.forEach(field => {
+    if (updateData[field]) delete updateData[field];
+  });
+  
+  // Apply updates
+  Object.keys(updateData).forEach(key => {
+    course[key] = updateData[key];
+  });
+  
+  // Save will trigger pre-save middleware
+  await course.save();
+  return course;
+};
+
+// Partial update with optimization
+courseSchema.statics.partialUpdate = async function(courseId, updateData) {
+  const course = await this.findById(courseId);
+  if (!course) {
+    throw new Error('Course not found');
+  }
+  
+  // Remove protected fields
+  const protectedFields = ['slug', 'code', '_id', '__v'];
+  protectedFields.forEach(field => {
+    delete updateData[field];
+  });
+  
+  // Handle special field updates
+  if (updateData.projects) {
+    updateData.totalProjects = updateData.projects.length;
+  }
+  
+  if (updateData.discount?.isDiscounted && (updateData.totalFees || course.totalFees)) {
+    const totalFees = updateData.totalFees || course.totalFees;
+    const discountPercent = updateData.discount.discountPercentage || course.discount?.discountPercentage || 0;
+    updateData.discount.discountedPrice = Math.round(totalFees - (totalFees * discountPercent / 100));
+  }
+  
+  // Apply updates
+  Object.assign(course, updateData);
+  await course.save();
+  
+  return course;
+};
+
+// Bulk update status
+courseSchema.statics.bulkUpdateStatus = async function(courseIds, isActive) {
+  return this.updateMany(
+    { _id: { $in: courseIds } },
+    { $set: { isActive } },
+    { new: true, runValidators: true }
+  );
+};
+
+// Indexes
 courseSchema.index({ name: 1 });
 courseSchema.index({ slug: 1 });
 courseSchema.index({ code: 1 });

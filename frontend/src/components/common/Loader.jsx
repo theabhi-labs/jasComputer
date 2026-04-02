@@ -1,45 +1,118 @@
-import React from 'react'
+import React from 'react';
 
-const Loader = ({ message = "Loading Excellence..." }) => {
+const LoaderJAS = ({ message = "Loading Excellence..." }) => {
   return (
-    <div className="fixed inset-0 flex items-center justify-center z- overflow-hidden">
-      {/* Premium Glass Overlay */}
-      <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-md transition-opacity duration-500"></div>
+    <div className="fixed inset-0 flex items-center justify-center z-50 overflow-hidden bg-slate-950">
+      {/* Premium Backdrop Layer */}
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-blue-900/20 via-slate-950 to-slate-950"></div>
 
-      {/* Floating Loader Card */}
-      <div className="relative bg-white p-10 rounded-[2.5rem] shadow-2xl shadow-blue-500/20 border border-slate-100 flex flex-col items-center max-w-xs w-full mx-4 animate-in fade-in zoom-in duration-300">
+      <div className="relative flex flex-col items-center">
         
-        {/* The "Brain" of the Loader - Unique Animation */}
-        <div className="relative w-20 h-20 mb-8">
-          {/* Outer Ring - Pulse */}
-          <div className="absolute inset-0 border-4 border-blue-500/20 rounded-full animate-ping"></div>
+        {/* Unique "JAS" Liquid Fill Container */}
+        <div className="relative mb-10">
+          <svg
+            viewBox="0 0 200 80"
+            className="w-48 h-24 md:w-64 md:h-32 select-none"
+          >
+            <defs>
+              {/* Liquid Pattern */}
+              <pattern
+                id="liquid"
+                patternUnits="userSpaceOnUse"
+                width="200"
+                height="200"
+                viewBox="0 0 100 100"
+              >
+                <path
+                  d="M 0 70 Q 25 60 50 70 T 100 70 V 100 H 0 Z"
+                  fill="url(#liquidGradient)"
+                >
+                  <animateTransform
+                    attributeName="transform"
+                    type="translate"
+                    from="0,0"
+                    to="100,0"
+                    dur="2s"
+                    repeatCount="indefinite"
+                  />
+                </path>
+              </pattern>
+
+              {/* Gradient for the Liquid */}
+              <linearGradient id="liquidGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stopColor="#3b82f6" />
+                <stop offset="100%" stopColor="#1d4ed8" />
+              </linearGradient>
+            </defs>
+
+            {/* Background Text (Outline) */}
+            <text
+              x="50%"
+              y="50%"
+              dy=".35em"
+              textAnchor="middle"
+              className="text-[60px] font-black tracking-tighter"
+              style={{
+                fill: 'transparent',
+                stroke: 'rgba(59, 130, 246, 0.2)',
+                strokeWidth: '1px',
+                fontFamily: 'system-ui, sans-serif'
+              }}
+            >
+              JAS
+            </text>
+
+            {/* Foreground Text (Filled with Liquid) */}
+            <text
+              x="50%"
+              y="50%"
+              dy=".35em"
+              textAnchor="middle"
+              className="text-[60px] font-black tracking-tighter"
+              style={{
+                fill: 'url(#liquid)',
+                fontFamily: 'system-ui, sans-serif'
+              }}
+            >
+              JAS
+              <animate
+                attributeName="y"
+                from="20"
+                to="-20"
+                dur="3s"
+                repeatCount="indefinite"
+              />
+            </text>
+          </svg>
           
-          {/* Middle Ring - Faster Spin */}
-          <div className="absolute inset-0 border-4 border-transparent border-t-blue-600 rounded-full animate-spin duration-700"></div>
-          
-          {/* Inner Circle - Steady Glow */}
-          <div className="absolute inset-4 bg-gradient-to-tr from-blue-600 to-indigo-500 rounded-2xl shadow-lg shadow-blue-400/50 animate-pulse rotate-45"></div>
+          {/* Subtle Outer Glow */}
+          <div className="absolute -inset-4 bg-blue-500/10 blur-3xl -z-10 animate-pulse"></div>
         </div>
 
-        {/* Text Section */}
-        <div className="text-center space-y-2">
-          <h3 className="text-lg font-black text-slate-900 tracking-tight leading-none italic">
-            Coaching<span className="text-blue-600">.</span>MS
+        {/* Branding & Message */}
+        <div className="text-center">
+          <h3 className="text-white text-xl font-bold tracking-widest mb-1">
+            JAS<span className="text-blue-500">.Computer</span>
           </h3>
-          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.3em] animate-pulse">
+          <p className="text-slate-500 text-[10px] uppercase tracking-[0.5em] animate-pulse">
             {message}
           </p>
         </div>
 
-        {/* Bottom Decorative Dots */}
-        <div className="flex gap-1.5 mt-6">
-            <div className="w-1.5 h-1.5 bg-blue-600 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
-            <div className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
-            <div className="w-1.5 h-1.5 bg-blue-200 rounded-full animate-bounce"></div>
+        {/* Minimal Progress Bar */}
+        <div className="w-40 h-[2px] bg-slate-800 mt-6 overflow-hidden rounded-full">
+          <div className="h-full bg-blue-500 w-1/2 animate-[loading_1.5s_ease-in-out_infinite]"></div>
         </div>
       </div>
-    </div>
-  )
-}
 
-export default Loader
+      <style jsx>{`
+        @keyframes loading {
+          0% { transform: translateX(-100%); }
+          100% { transform: translateX(200%); }
+        }
+      `}</style>
+    </div>
+  );
+};
+
+export default LoaderJAS;

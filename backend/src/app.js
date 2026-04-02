@@ -33,14 +33,6 @@ import { errorMiddleware, notFound } from './middleware/errorMiddleware.js';
 
 const app = express();
 
-// Body parser
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-
-// Security
-app.use(helmet({
-  crossOriginResourcePolicy: { policy: "cross-origin" }
-}));
 
 // ==================== CORS CONFIGURATION ====================
 const allowedOrigins = [
@@ -52,14 +44,16 @@ const allowedOrigins = [
   process.env.FRONTEND_URL
 ].filter(Boolean);
 
-// Log allowed origins for debugging
 console.log('CORS allowed origins:', allowedOrigins);
-app.use(cors({
+
+const corsOptions = {
   origin: function (origin, callback) {
-     console.log("Incoming Origin:", origin);
+    console.log("Incoming Origin:", origin);
+
+    // Allow server-to-server or same-origin (no origin header)
     if (!origin) return callback(null, true);
 
-    // Development mode → allow all
+    // Development: allow all
     if (process.env.NODE_ENV === 'development') {
       return callback(null, true);
     }
@@ -69,14 +63,26 @@ app.use(cors({
     }
 
     console.warn('CORS blocked origin:', origin);
-
-    // ❗ IMPORTANT: error throw mat karo
-    return callback(null, false);
+    return callback(new Error(`CORS policy: origin ${origin} not allowed`));
   },
-  credentials: true
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+};
+
+// ✅ CORS must be FIRST — before helmet, body parsers, everything
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions)); // ✅ Same config for preflight
+
+// Security
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" }
 }));
 
-app.options('*', cors());
+// Body parser
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
 
 // Logging
 if (process.env.NODE_ENV === 'development') {

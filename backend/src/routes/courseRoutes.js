@@ -3,17 +3,54 @@ import { courseController } from '../controllers/index.js';
 import { protect } from '../middleware/authMiddleware.js';
 import { authorize } from '../middleware/roleMiddleware.js';
 import { ROLES } from '../constants/roles.js';
+import Course from '../models/Course.js';
 
 const router = express.Router();
 
 // ==================== PUBLIC ROUTES (NO AUTHENTICATION) ====================
-// These routes are accessible to everyone
 router.get('/public', courseController.getAllCourses);
 router.get('/public/featured', courseController.getFeaturedCourses);
 router.get('/public/popular', courseController.getPopularCourses);
 router.get('/public/categories', courseController.getCourseCategories);
 router.get('/public/slug/:slug', courseController.getCourseBySlug);
 router.get('/public/:id', courseController.getCourseByIdOrSlug);
+
+// ✅ FORCE UPDATE - MOVE THIS HERE (BEFORE protect middleware)
+router.put('/force-update/:id', async (req, res) => {
+  try {
+    console.log("🔧 FORCE UPDATE ENDPOINT HIT");
+    console.log("ID:", req.params.id);
+    console.log("Body:", req.body);
+    
+    const { id } = req.params;
+    const updateData = req.body;
+    
+    // Direct database update
+    const result = await Course.updateOne(
+      { _id: id },
+      { $set: updateData }
+    );
+    
+    console.log("Update result:", result);
+    
+    // Get updated course
+    const updated = await Course.findById(id);
+    
+    res.json({
+      success: true,
+      message: "Force update successful",
+      result: result,
+      updatedCourse: {
+        totalFees: updated.totalFees,
+        level: updated.level,
+        name: updated.name
+      }
+    });
+  } catch (error) {
+    console.error("Force update error:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
 
 // ==================== PROTECTED ROUTES ====================
 // All routes below this middleware require authentication
@@ -25,25 +62,21 @@ router.get('/',
   courseController.getAllCourses
 );
 
-// Get featured courses (authenticated)
 router.get('/featured', 
   authorize(ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.TEACHER),
   courseController.getFeaturedCourses
 );
 
-// Get popular courses (authenticated)
 router.get('/popular', 
   authorize(ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.TEACHER),
   courseController.getPopularCourses
 );
 
-// Get course categories (authenticated)
 router.get('/categories', 
   authorize(ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.TEACHER),
   courseController.getCourseCategories
 );
 
-// Get single course by ID or slug (authenticated)
 router.get('/:id', 
   authorize(ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.TEACHER),
   courseController.getCourseByIdOrSlug
@@ -51,37 +84,38 @@ router.get('/:id',
 
 // ==================== ADMIN & SUPER ADMIN ROUTES ====================
 
-// Create course
 router.post('/', 
   authorize(ROLES.SUPER_ADMIN, ROLES.ADMIN), 
   courseController.createCourse
 );
 
-// Update course
 router.put('/:id', 
   authorize(ROLES.SUPER_ADMIN, ROLES.ADMIN), 
+  (req, res, next) => {
+    console.log("🔵 Route hit: PUT /:id");
+    console.log("🔵 Course ID:", req.params.id);
+    console.log("🔵 Request body:", req.body);
+    console.log("🔵 User:", req.user);
+    next();
+  },
   courseController.updateCourse
 );
 
-// Update course rating
 router.patch('/:id/rating', 
   authorize(ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.TEACHER),
   courseController.updateCourseRating
 );
 
-// Toggle course status
 router.patch('/:id/toggle-status', 
   authorize(ROLES.SUPER_ADMIN, ROLES.ADMIN), 
   courseController.toggleCourseStatus
 );
 
-// Delete course
 router.delete('/:id', 
   authorize(ROLES.SUPER_ADMIN, ROLES.ADMIN), 
   courseController.deleteCourse
 );
 
-// Bulk update course status
 router.patch('/bulk/status', 
   authorize(ROLES.SUPER_ADMIN, ROLES.ADMIN),
   courseController.bulkUpdateStatus

@@ -1,38 +1,54 @@
-import axios from 'axios'
+import api from '../config/axios'; // Your axios config file
 
-const API_URL = import.meta.env.VITE_API_URL || 'https://jascomputer-1.onrender.com';
-console.log("API URL:", API_URL);
-
-const api = axios.create({
-  baseURL: `${API_URL}/api`,
-  headers: {
-    'Content-Type': 'application/json',
+const courseService = {
+  // ✅ Get all courses
+  getAllCourses: (params = {}) => {
+    return api.get('/courses', { params });
   },
-});
 
-// Request interceptor - Add token
-api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('token')
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`
-    }
-    return config
+  // ✅ Get single course by ID or slug
+  getCourse: (id) => {
+    console.log('🔍 Fetching course:', id);
+    return api.get(`/courses/${id}`);
   },
-  (error) => Promise.reject(error)
-)
 
-// Response interceptor - Handle errors
-api.interceptors.response.use(
-  (response) => response.data,
-  (error) => {
-    if (error.response?.status === 401) {
-      localStorage.removeItem('token')
-      localStorage.removeItem('user')
-      window.location.href = '/login'
-    }
-    return Promise.reject(error.response?.data || error.message)
+  // ✅ CREATE course (working already)
+  createCourse: (data) => {
+    console.log('📝 Creating course:', data);
+    return api.post('/courses', data);
+  },
+
+  // ✅ UPDATE course - FIX THIS ONE
+  updateCourse: (courseId, data) => {
+    console.log('🔄 UPDATING COURSE:');
+    console.log('   ID:', courseId);
+    console.log('   Data:', data);
+    console.log('   URL:', `/courses/${courseId}`);
+    
+    return api.put(`/courses/${courseId}`, data);
+  },
+
+  // ✅ Delete course
+  deleteCourse: (courseId) => {
+    console.log('🗑️ Deleting course:', courseId);
+    return api.delete(`/courses/${courseId}`);
+  },
+
+  // ✅ Toggle course status
+  toggleCourseStatus: (courseId) => {
+    console.log('🔄 Toggling course status:', courseId);
+    return api.patch(`/courses/${courseId}/toggle-status`);
+  },
+
+  // ✅ Bulk update status
+  bulkUpdateStatus: (courseIds, isActive) => {
+    return api.put('/courses/bulk-status', { courseIds, isActive });
+  },
+
+  // ✅ Update course rating
+  updateRating: (courseId, rating) => {
+    return api.patch(`/courses/${courseId}/rating`, { rating });
   }
-)
+};
 
-export default api
+export default courseService;
