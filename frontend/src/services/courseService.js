@@ -1,4 +1,4 @@
-import api from './api'
+import api from "./api";  // ✅ Correct path
 
 export const courseService = {
   // ==================== PUBLIC ROUTES ====================
@@ -52,8 +52,9 @@ export const courseService = {
     return await api.post('/courses', data)
   },
 
-  // Update course
+  // ✅ Update course - This is what you'll use
   updateCourse: async (id, data) => {
+    console.log('🔄 CourseService: Updating course', id, data);
     return await api.put(`/courses/${id}`, data)
   },
 
