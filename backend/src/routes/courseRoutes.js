@@ -7,15 +7,9 @@ import Course from '../models/Course.js';
 
 const router = express.Router();
 
-// ==================== PUBLIC ROUTES (NO AUTHENTICATION) ====================
-router.get('/public', courseController.getAllCourses);
-router.get('/public/featured', courseController.getFeaturedCourses);
-router.get('/public/popular', courseController.getPopularCourses);
-router.get('/public/categories', courseController.getCourseCategories);
-router.get('/public/slug/:slug', courseController.getCourseBySlug);
-router.get('/public/:id', courseController.getCourseByIdOrSlug);
-
-// ✅ FORCE UPDATE - MOVE THIS HERE (BEFORE protect middleware)
+// ============================================================
+// ✅✅✅ FORCE UPDATE - ABSOLUTE TOP (NO AUTH REQUIRED)
+// ============================================================
 router.put('/force-update/:id', async (req, res) => {
   try {
     console.log("🔧 FORCE UPDATE ENDPOINT HIT");
@@ -52,11 +46,21 @@ router.put('/force-update/:id', async (req, res) => {
   }
 });
 
-// ==================== PROTECTED ROUTES ====================
-// All routes below this middleware require authentication
+// ============================================================
+// PUBLIC ROUTES (NO AUTHENTICATION)
+// ============================================================
+router.get('/public', courseController.getAllCourses);
+router.get('/public/featured', courseController.getFeaturedCourses);
+router.get('/public/popular', courseController.getPopularCourses);
+router.get('/public/categories', courseController.getCourseCategories);
+router.get('/public/slug/:slug', courseController.getCourseBySlug);
+router.get('/public/:id', courseController.getCourseByIdOrSlug);
+
+// ============================================================
+// PROTECTED ROUTES (AUTHENTICATION REQUIRED)
+// ============================================================
 router.use(protect);
 
-// Get all courses (accessible to all authenticated users)
 router.get('/', 
   authorize(ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.TEACHER), 
   courseController.getAllCourses
@@ -82,8 +86,9 @@ router.get('/:id',
   courseController.getCourseByIdOrSlug
 );
 
-// ==================== ADMIN & SUPER ADMIN ROUTES ====================
-
+// ============================================================
+// ADMIN ROUTES
+// ============================================================
 router.post('/', 
   authorize(ROLES.SUPER_ADMIN, ROLES.ADMIN), 
   courseController.createCourse
