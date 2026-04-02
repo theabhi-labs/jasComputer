@@ -29,11 +29,10 @@ import TeacherDashboard from './components/teacher/TeacherDashboard'
 import AdminDashboard from './components/admin/AdminDashboard'
 
 // Student
-import StudentFees from './components/student/StudentFees'
 import StudentAttendance from './components/student/StudentAttendance'
 import StudentCertificates from './components/student/StudentCertificates'
 import StudentCourses from './components/student/StudentCourses'
-import PaymentHistory from './components/student/PaymentHistory'
+
 
 // Teacher
 import MyStudents from './components/teacher/MyStudents'
@@ -45,7 +44,6 @@ import ViewAttendance from './components/teacher/ViewAttendance'
 import StudentManagement from './components/admin/StudentManagement'
 import TeacherManagement from './components/admin/TeacherManagement'
 import BatchManagement from './components/admin/BatchManagement'
-import FeeManagement from './components/admin/FeeManagement'
 import CourseManagement from './components/admin/CourseManagement'
 import AttendanceManagement from './components/admin/AttendanceManagement'
 import InquiryManagement from './components/admin/InquiryManagement'
@@ -131,7 +129,6 @@ function App() {
                 <Route path="/dashboard/teachers" element={<TeacherManagement />} />
                 <Route path="/dashboard/courses" element={<CourseManagement />} />
                 <Route path="/dashboard/batches" element={<BatchManagement />} />
-                <Route path="/dashboard/fees" element={<FeeManagement />} />
                 <Route path="/dashboard/certificates" element={<CertificateManagement />} />
                 <Route path="/dashboard/attendance" element={<AttendanceManagement />} />
                 <Route path="/dashboard/inquiries" element={<InquiryManagement />} />

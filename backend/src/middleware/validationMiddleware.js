@@ -83,36 +83,6 @@ export const validateCourseSelection = [
     .isMongoId().withMessage('Invalid batch ID format')
 ];
 
-// Validation for document upload (Step 3)
-export const validateDocumentUpload = [
-  body('documents')
-    .optional()
-    .isObject().withMessage('Documents must be an object'),
-  
-  body('documents.photo')
-    .optional()
-    .isURL().withMessage('Photo URL must be valid'),
-  
-  body('documents.aadharCard')
-    .optional()
-    .isURL().withMessage('Aadhar card URL must be valid'),
-  
-  body('documents.marksheet10th')
-    .optional()
-    .isURL().withMessage('10th marksheet URL must be valid'),
-  
-  body('documents.marksheet12th')
-    .optional()
-    .isURL().withMessage('12th marksheet URL must be valid'),
-  
-  body('documents.transferCertificate')
-    .optional()
-    .isURL().withMessage('Transfer certificate URL must be valid'),
-  
-  body('documents.casteCertificate')
-    .optional()
-    .isURL().withMessage('Caste certificate URL must be valid')
-];
 
 // Validation for OTP verification (Step 4)
 export const validateOTPVerification = [
@@ -337,7 +307,6 @@ export default {
   // Registration flow validations
   validateStudentRegistration,
   validateCourseSelection,
-  validateDocumentUpload,
   validateOTPVerification,
   validatePaymentCompletion,
   validateAdmissionFeePayment,

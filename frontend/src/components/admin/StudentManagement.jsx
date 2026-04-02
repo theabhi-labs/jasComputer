@@ -11,8 +11,8 @@ import {
 import AddStudent from './AddStudent'
 import EditStudent from './EditStudent'
 import StudentDetailsModal from './StudentDetailsModal'
-import DocumentUpload from './DocumentUpload'
 import * as XLSX from 'xlsx'
+import LoaderJAS from '../common/Loader'
 
 const StudentManagement = () => {
   const [students, setStudents] = useState([])
@@ -25,8 +25,6 @@ const StudentManagement = () => {
   const [showAddModal, setShowAddModal] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
   const [showDetailsModal, setShowDetailsModal] = useState(false)
-  const [showDocumentModal, setShowDocumentModal] = useState(false)
-  const [showPaymentModal, setShowPaymentModal] = useState(false)
   const [selectedStudent, setSelectedStudent] = useState(null)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [error, setError] = useState('')
@@ -129,54 +127,6 @@ const StudentManagement = () => {
     setPagination(prev => ({ ...prev, page: 1 }))
     fetchStudents()
   }
-
-  // Process Payment
-  const handleProcessPayment = async (e) => {
-    e.preventDefault()
-    setPaymentLoading(true)
-    setError('')
-
-    try {
-      const response = await studentService.payAdmissionFee(selectedStudent._id, {
-        paymentMethod: paymentDetails.method,
-        courseId: selectedStudent.course?._id,           // ✅ add this
-        courseFee: selectedStudent.course?.totalFees || selectedStudent.courseFee || paymentDetails.amount,  // ✅ add this
-        totalFees: selectedStudent.course?.totalFees || selectedStudent.courseFee || paymentDetails.amount,  // ✅ add this
-        paymentData: {
-          amount: paymentDetails.amount,
-          transactionId: paymentDetails.transactionId,
-          notes: paymentDetails.notes,
-          paymentDate: new Date().toISOString()
-        }
-      })
-
-      if (response.success) {
-        setSuccess(`✅ Admission fee of ₹${paymentDetails.amount} collected successfully from ${selectedStudent.name}! Email sent to student.`)
-        setShowPaymentModal(false)
-        fetchStudents()
-        fetchStats()
-        resetPaymentForm()
-        setTimeout(() => setSuccess(''), 4000)
-      } else {
-        setError(response.message || 'Payment failed')
-      }
-    } catch (err) {
-      console.error('Payment error:', err)
-      setError(err.message || 'Payment failed')
-    } finally {
-      setPaymentLoading(false)
-    }
-  }
-
-  const resetPaymentForm = () => {
-  setPaymentDetails({
-    amount: 0,       // ✅ or just leave it neutral
-    method: 'cash',
-    notes: '',
-    transactionId: `ADM-${Date.now()}`
-  })
-  setSelectedStudent(null)
-}
 
   // Export to Excel
   const exportToExcel = async () => {
@@ -460,19 +410,6 @@ const StudentManagement = () => {
             </select>
           </div>
 
-          <div className="min-w-[150px]">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Admission Fee</label>
-            <select
-              value={filterPaymentStatus}
-              onChange={(e) => setFilterPaymentStatus(e.target.value)}
-              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">All</option>
-              <option value="completed">Paid</option>
-              <option value="pending">Pending</option>
-            </select>
-          </div>
-
           <div className="flex gap-2">
             <Button onClick={handleSearch} className="bg-blue-600 hover:bg-blue-700">
               <FaSearch className="inline mr-2" />
@@ -562,35 +499,6 @@ const StudentManagement = () => {
                       <button
                         onClick={() => {
                           setSelectedStudent(student)
-                          setShowDocumentModal(true)
-                        }}
-                        className="text-purple-600 hover:text-purple-800 transition-colors"
-                        title="Upload Documents"
-                      >
-                        <FaUpload />
-                      </button>
-                      {/* Payment Button - Only show if admission fee is pending */}
-                      {!student.admissionFeePaid && (
-                        <button
-                          onClick={() => {
-                            setSelectedStudent(student)
-                            setPaymentDetails({
-                              amount: 5000,
-                              method: 'cash',
-                              notes: '',
-                              transactionId: `ADM-${Date.now()}`
-                            })
-                            setShowPaymentModal(true)
-                          }}
-                          className="text-green-600 hover:text-green-800 transition-colors"
-                          title="Collect Admission Fee"
-                        >
-                          <FaMoneyBillWave />
-                        </button>
-                      )}
-                      <button
-                        onClick={() => {
-                          setSelectedStudent(student)
                           setShowEditModal(true)
                         }}
                         className="text-yellow-600 hover:text-yellow-800 transition-colors"
@@ -658,122 +566,6 @@ const StudentManagement = () => {
         }}
         courses={courses}
       />
-
-      <DocumentUpload
-        isOpen={showDocumentModal}
-        onClose={() => {
-          setShowDocumentModal(false)
-          setSelectedStudent(null)
-        }}
-        onSuccess={() => {
-          fetchStudents()
-          setShowDocumentModal(false)
-          setSelectedStudent(null)
-        }}
-        student={selectedStudent}
-      />
-
-      {/* Payment Modal */}
-      <Modal
-        isOpen={showPaymentModal}
-        onClose={() => {
-          setShowPaymentModal(false)
-          resetPaymentForm()
-        }}
-        title="Collect Admission Fee"
-        size="md"
-      >
-        <form onSubmit={handleProcessPayment} className="space-y-5">
-          <div className="bg-blue-50 rounded-lg p-4 mb-2">
-            <p className="text-sm text-blue-800">
-              <strong>Student:</strong> {selectedStudent?.name}
-            </p>
-            <p className="text-sm text-blue-800">
-              <strong>Email:</strong> {selectedStudent?.email}
-            </p>
-            <p className="text-sm text-blue-800">
-              <strong>Course:</strong> {selectedStudent?.course?.name || selectedStudent?.courseName}
-            </p>
-            <p className="text-sm font-semibold text-blue-800 mt-2">
-              <strong>Admission Fee:</strong> ₹5,000
-            </p>
-          </div>
-
-          <div className="relative">
-            <FaRupeeSign className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input
-              type="number"
-              value={paymentDetails.amount}
-              onChange={(e) => setPaymentDetails({ ...paymentDetails, amount: parseFloat(e.target.value) })}
-              placeholder="Admission Fee Amount (₹)"
-              className="w-full pl-10 pr-3 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500"
-              required
-              min="1"
-            />
-          </div>
-
-          <div className="relative">
-            <FaWallet className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-            <select
-              value={paymentDetails.method}
-              onChange={(e) => setPaymentDetails({ ...paymentDetails, method: e.target.value })}
-              className="w-full pl-10 pr-3 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="cash">Cash 💵</option>
-              <option value="bank_transfer">Bank Transfer 🏦</option>
-              <option value="cheque">Cheque 📝</option>
-              <option value="online">Online Payment 💳</option>
-            </select>
-          </div>
-
-          <div className="relative">
-            <FaCreditCard className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input
-              type="text"
-              value={paymentDetails.transactionId}
-              onChange={(e) => setPaymentDetails({ ...paymentDetails, transactionId: e.target.value })}
-              placeholder="Transaction ID / Receipt No."
-              className="w-full pl-10 pr-3 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-
-          <textarea
-            value={paymentDetails.notes}
-            onChange={(e) => setPaymentDetails({ ...paymentDetails, notes: e.target.value })}
-            placeholder="Payment notes"
-            rows="2"
-            className="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500"
-          />
-
-          <div className="bg-yellow-50 rounded-lg p-3">
-            <p className="text-xs text-yellow-700">
-              <FaInfoCircle className="inline mr-1" />
-              Student will receive confirmation email with dashboard access after payment.
-            </p>
-          </div>
-
-          <div className="flex justify-end gap-3 pt-4 border-t">
-            <button
-              type="button"
-              onClick={() => {
-                setShowPaymentModal(false)
-                resetPaymentForm()
-              }}
-              className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
-            >
-              Cancel
-            </button>
-            <Button
-              type="submit"
-              isLoading={paymentLoading}
-              className="bg-green-600 hover:bg-green-700"
-            >
-              <FaMoneyBillWave className="inline mr-2" />
-              {paymentLoading ? 'Processing...' : 'Process Payment'}
-            </Button>
-          </div>
-        </form>
-      </Modal>
 
       <EditStudent
         isOpen={showEditModal}

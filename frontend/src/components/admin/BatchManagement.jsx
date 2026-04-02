@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { batchService, courseService, userService } from '../../services'
 import { Card, Button, Input, Modal, ConfirmModal, Alert, Loader } from '../common'
 import { FaPlus, FaEdit, FaTrash, FaUsers, FaClock, FaCalendarAlt } from 'react-icons/fa'
+import LoaderJAS from '../common/Loader'
 
 const BatchManagement = () => {
   const [batches, setBatches] = useState([])

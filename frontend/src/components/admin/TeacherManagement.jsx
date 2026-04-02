@@ -3,6 +3,7 @@ import { userService } from '../../services'
 import { Card, Button, Input, Modal, ConfirmModal, Alert, Loader } from '../common'
 import { FaPlus, FaEdit, FaTrash, FaChalkboardTeacher, FaEnvelope, FaPhone, FaGraduationCap, FaMoneyBillWave, FaCalendarAlt } from 'react-icons/fa'
 import { toast } from 'react-hot-toast'
+import LoaderJAS from '../common/Loader'
 
 const TeacherManagement = () => {
   const [teachers, setTeachers] = useState([])

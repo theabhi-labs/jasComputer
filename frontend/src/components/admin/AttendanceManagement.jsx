@@ -4,6 +4,7 @@ import { attendanceService, batchService, studentService } from '../../services'
 import { Card, Button, Input, Alert, Loader } from '../common'
 import { FaCalendarCheck, FaCheck, FaTimes, FaClock, FaUserGraduate, FaSave } from 'react-icons/fa'
 import { format } from 'date-fns'
+import LoaderJAS from '../common/Loader'
 
 const AttendanceManagement = () => {
   const [batches, setBatches] = useState([])

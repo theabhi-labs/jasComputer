@@ -45,7 +45,6 @@ import StudentManagement from '../components/admin/StudentManagement'
 import TeacherManagement from '../components/admin/TeacherManagement'
 import CourseManagement from '../components/admin/CourseManagement'
 import BatchManagement from '../components/admin/BatchManagement'
-import FeeManagement from '../components/admin/FeeManagement'
 import AttendanceManagement from '../components/admin/AttendanceManagement'
 import CertificateManagement from '../components/admin/CertificateManagement'
 import InquiryManagement from '../components/admin/InquiryManagement'
@@ -126,7 +125,6 @@ const AppRouter = () => {
               <Route path="/dashboard/teachers" element={<TeacherManagement />} />
               <Route path="/dashboard/courses" element={<CourseManagement />} />
               <Route path="/dashboard/batches" element={<BatchManagement />} />
-              <Route path="/dashboard/fees" element={<FeeManagement />} />
               <Route path="/dashboard/attendance" element={<AttendanceManagement />} />
               <Route path="/dashboard/certificates" element={<CertificateManagement />} />
               <Route path="/dashboard/inquiries" element={<InquiryManagement />} />

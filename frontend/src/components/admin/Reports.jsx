@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react'
 import { Card, Button, Input } from '../common'
-import { feeService, studentService } from '../../services'
 import { FaDownload, FaChartLine, FaUsers, FaMoneyBillWave, FaCalendarAlt } from 'react-icons/fa'
 import { Line, Bar, Pie } from 'react-chartjs-2'
+import LoaderJAS from '../common/Loader'
 import {
   Chart as ChartJS,
   CategoryScale,

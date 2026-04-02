@@ -3,12 +3,89 @@ import { certificateService, studentService, courseService } from '../../service
 import { Card, Button, Input, Modal, ConfirmModal, Alert, Loader } from '../common';
 import { format } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
-// Icons (Assuming you use Lucide or HeroIcons, otherwise replace with emojis as before)
 import { 
   Plus, Search, Download, Eye, Trash2, Share2, 
-  Award, CheckCircle, XCircle, FileText, Info 
+  Award, CheckCircle, XCircle, FileText, Info, 
+  Mail, Link 
 } from 'lucide-react';
+import { FaFacebook, FaTwitter, FaLinkedin, FaWhatsapp } from 'react-icons/fa';
+import LoaderJAS from '../common/Loader';
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Reusable Share Modal Component
+// ─────────────────────────────────────────────────────────────────────────────
+const ShareModal = ({ isOpen, onClose, certificateId, studentName, courseName }) => {
+  const [copied, setCopied] = useState(false);
+
+  if (!isOpen) return null;
+
+  const verificationUrl = `${window.location.origin}/verify-certificate/${certificateId}`;
+  const encodedUrl = encodeURIComponent(verificationUrl);
+  const encodedText = encodeURIComponent(`🎓 I have successfully completed the course "${courseName}"! View my certificate here:`);
+
+  const shareOptions = [
+    { name: 'WhatsApp', icon: FaWhatsapp, color: 'bg-green-500 hover:bg-green-600', url: `https://wa.me/?text=${encodedText}%20${encodedUrl}` },
+    { name: 'Facebook', icon: FaFacebook, color: 'bg-blue-600 hover:bg-blue-700', url: `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}` },
+    { name: 'Twitter', icon: FaTwitter, color: 'bg-sky-500 hover:bg-sky-600', url: `https://twitter.com/intent/tweet?text=${encodedText}&url=${encodedUrl}` },
+    { name: 'LinkedIn', icon: FaLinkedin, color: 'bg-blue-700 hover:bg-blue-800', url: `https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}` },
+    { name: 'Email', icon: Mail, color: 'bg-gray-600 hover:bg-gray-700', url: `mailto:?subject=My%20Certificate%20of%20Completion&body=${encodedText}%20${encodedUrl}` },
+  ];
+
+  const copyToClipboard = async () => {
+    try {
+      await navigator.clipboard.writeText(verificationUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      alert('Failed to copy link');
+    }
+  };
+
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} title="Share Certificate" size="md">
+      <div className="space-y-6">
+        <p className="text-sm text-gray-600">
+          Share your achievement with friends and employers. Anyone with this link can verify your certificate.
+        </p>
+        
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          {shareOptions.map((opt) => (
+            <a
+              key={opt.name}
+              href={opt.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`flex flex-col items-center gap-2 p-3 rounded-xl text-white transition-transform transform hover:scale-105 ${opt.color}`}
+              onClick={(e) => {
+                if (opt.name === 'Email') return;
+                e.stopPropagation();
+              }}
+            >
+              <opt.icon className="w-5 h-5" />
+              <span className="text-xs font-semibold">{opt.name}</span>
+            </a>
+          ))}
+          
+          <button
+            onClick={copyToClipboard}
+            className="flex flex-col items-center gap-2 p-3 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 transition-colors"
+          >
+            <Link className="w-5 h-5" />
+            <span className="text-xs font-semibold">{copied ? 'Copied!' : 'Copy Link'}</span>
+          </button>
+        </div>
+
+        <div className="bg-gray-50 p-3 rounded-xl border border-gray-200">
+          <p className="text-xs font-mono text-gray-500 break-all">{verificationUrl}</p>
+        </div>
+      </div>
+    </Modal>
+  );
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Main Component
+// ─────────────────────────────────────────────────────────────────────────────
 const CertificateManagement = () => {
   const [certificates, setCertificates] = useState([]);
   const [students, setStudents] = useState([]);
@@ -18,6 +95,7 @@ const CertificateManagement = () => {
   const [showGenerateModal, setShowGenerateModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
   const [showRevokeConfirm, setShowRevokeConfirm] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
   const [selectedCertificate, setSelectedCertificate] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [formData, setFormData] = useState({
@@ -109,13 +187,16 @@ const CertificateManagement = () => {
   };
 
   const handleDownload = (certificate) => {
-    window.open(certificate.pdfUrl || '#', '_blank');
+    if (certificate.pdfUrl) {
+      window.open(certificate.pdfUrl, '_blank');
+    } else {
+      alert('PDF not available');
+    }
   };
 
   const handleShare = (certificate) => {
-    const url = `${window.location.origin}/verify-certificate/${certificate.certificateId}`;
-    navigator.clipboard.writeText(url);
-    alert('Verification link copied to clipboard!');
+    setSelectedCertificate(certificate);
+    setShowShareModal(true);
   };
 
   const resetForm = () => {
@@ -133,7 +214,7 @@ const CertificateManagement = () => {
     return labels[type] || type;
   };
 
-  if (loading && certificates.length === 0) return <Loader />;
+  if (loading && certificates.length === 0) return <LoaderJAS />;
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 animate-in fade-in duration-500">
@@ -152,7 +233,7 @@ const CertificateManagement = () => {
         </Button>
       </div>
 
-      {/* Stats Section with Glassmorphism */}
+      {/* Stats Section */}
       {stats && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {[
@@ -235,18 +316,30 @@ const CertificateManagement = () => {
                       </span>
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button onClick={() => { setSelectedCertificate(cert); setShowViewModal(true); }} className="p-2 hover:bg-white rounded-lg text-blue-600 shadow-sm border border-transparent hover:border-blue-100 transition-all">
+                      <div className="flex justify-end gap-2">
+                        <button 
+                          onClick={() => { setSelectedCertificate(cert); setShowViewModal(true); }} 
+                          className="p-2 hover:bg-white rounded-lg text-blue-600 shadow-sm border border-transparent hover:border-blue-100 transition-all"
+                        >
                           <Eye size={18} />
                         </button>
-                        <button onClick={() => handleDownload(cert)} className="p-2 hover:bg-white rounded-lg text-green-600 shadow-sm border border-transparent hover:border-green-100 transition-all">
+                        <button 
+                          onClick={() => handleDownload(cert)} 
+                          className="p-2 hover:bg-white rounded-lg text-green-600 shadow-sm border border-transparent hover:border-green-100 transition-all"
+                        >
                           <Download size={18} />
                         </button>
-                        <button onClick={() => handleShare(cert)} className="p-2 hover:bg-white rounded-lg text-purple-600 shadow-sm border border-transparent hover:border-purple-100 transition-all">
+                        <button 
+                          onClick={() => handleShare(cert)} 
+                          className="p-2 hover:bg-white rounded-lg text-purple-600 shadow-sm border border-transparent hover:border-purple-100 transition-all"
+                        >
                           <Share2 size={18} />
                         </button>
                         {cert.status === 'issued' && (
-                          <button onClick={() => { setSelectedCertificate(cert); setShowRevokeConfirm(true); }} className="p-2 hover:bg-white rounded-lg text-red-600 shadow-sm border border-transparent hover:border-red-100 transition-all">
+                          <button 
+                            onClick={() => { setSelectedCertificate(cert); setShowRevokeConfirm(true); }} 
+                            className="p-2 hover:bg-white rounded-lg text-red-600 shadow-sm border border-transparent hover:border-red-100 transition-all"
+                          >
                             <Trash2 size={18} />
                           </button>
                         )}
@@ -260,8 +353,7 @@ const CertificateManagement = () => {
         </div>
       </Card>
 
-      {/* --- Modals (Simplified for brevity but keep the Premium styling) --- */}
-      {/* Generate Modal - Enhanced Search UI */}
+      {/* Generate Modal */}
       <Modal isOpen={showGenerateModal} onClose={() => setShowGenerateModal(false)} title="Generate New Credential" size="lg">
         <form onSubmit={handleGenerate} className="space-y-6">
           <div className="space-y-4">
@@ -303,7 +395,8 @@ const CertificateManagement = () => {
               >
                 <option value="course_completion">Course Completion</option>
                 <option value="achievement">Achievement</option>
-                {/* ... other options */}
+                <option value="participation">Participation</option>
+                <option value="bonafide">Bonafide</option>
               </select>
             </div>
             <Input 
@@ -322,7 +415,7 @@ const CertificateManagement = () => {
         </form>
       </Modal>
 
-      {/* View Modal - Detailed Preview */}
+      {/* View Modal */}
       <Modal isOpen={showViewModal} onClose={() => setShowViewModal(false)} title="Credential Preview" size="lg">
         {selectedCertificate && (
           <div className="space-y-6">
@@ -355,13 +448,14 @@ const CertificateManagement = () => {
                 <Download className="w-4 h-4 mr-2" /> Download PDF
               </Button>
               <Button variant="secondary" onClick={() => handleShare(selectedCertificate)} className="flex-1">
-                <Share2 className="w-4 h-4 mr-2" /> Copy Verify Link
+                <Share2 className="w-4 h-4 mr-2" /> Share Certificate
               </Button>
             </div>
           </div>
         )}
       </Modal>
 
+      {/* Confirm Revoke Modal */}
       <ConfirmModal
         isOpen={showRevokeConfirm}
         onClose={() => setShowRevokeConfirm(false)}
@@ -370,6 +464,20 @@ const CertificateManagement = () => {
         message="This will permanently invalidate this certificate. The student will no longer be able to verify this document. Proceed?"
         confirmText="Yes, Revoke"
       />
+
+      {/* Share Modal */}
+      {selectedCertificate && (
+        <ShareModal
+          isOpen={showShareModal}
+          onClose={() => {
+            setShowShareModal(false);
+            setSelectedCertificate(null);
+          }}
+          certificateId={selectedCertificate.certificateId}
+          studentName={selectedCertificate.studentId?.name}
+          courseName={selectedCertificate.courseId?.name}
+        />
+      )}
     </div>
   );
 };

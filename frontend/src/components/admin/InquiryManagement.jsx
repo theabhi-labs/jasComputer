@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { inquiryService, userService } from '../../services'
 import { Card, Button, Input, Modal, Alert, Loader } from '../common'
 import { FaEye, FaEdit, FaCheck, FaTimes, FaUserPlus, FaPhone, FaEnvelope } from 'react-icons/fa'
+import LoaderJAS from '../common/Loader'
 
 const InquiryManagement = () => {
   const [inquiries, setInquiries] = useState([])

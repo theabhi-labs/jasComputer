@@ -138,27 +138,6 @@ export const sendWelcomeEmail = async (email, name, enrollmentId, courseName, is
   return await sendEmail({ to: email, subject, htmlContent: getEmailWrapper('WELCOME ABOARD', content) });
 };
 
-// Send document upload notification
-export const sendDocumentUploadNotification = async (email, name, enrollmentId, documents) => {
-  const subject = '📄 Documents Uploaded - JAS Computer Institute';
-  const content = `
-    <h2>Dear ${name},</h2>
-    <p>Your documents have been successfully processed and uploaded to your profile by the <strong>JAS Institute Team</strong>.</p>
-    
-    <div style="background: #f8fafc; padding: 20px; border-radius: 12px; margin: 20px 0; border: 1px solid #e2e8f0;">
-      <h3 style="margin: 0 0 10px 0; font-size: 15px; color: #1e3a8a;">Uploaded Files:</h3>
-      <ul style="padding: 0; list-style: none;">
-        ${documents.map(doc => `<li style="padding: 5px 0; font-size: 14px;">✅ ${doc.docType.toUpperCase()}: ${doc.fileName}</li>`).join('')}
-      </ul>
-    </div>
-    <p style="font-size: 14px;"><strong>Enrollment ID:</strong> ${enrollmentId}</p>
-    <div style="text-align: center; margin-top: 25px;">
-      <a href="http://localhost:3000/student/dashboard" style="background: #10b981; color: white; padding: 12px 25px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">View Documents</a>
-    </div>
-  `;
-  return await sendEmail({ to: email, subject, htmlContent: getEmailWrapper('DOCUMENTS VERIFIED', content, "#10b981") });
-};
-
 // Send payment confirmation email
 export const sendPaymentConfirmation = async (email, name, enrollmentId, amount, paymentMethod, courseName) => {
   const subject = '💰 Payment Confirmed - JAS Computer Institute';
@@ -285,7 +264,6 @@ export const sendFeeReminderEmail = sendFeeReminder;
 export default {
   sendVerificationOTP,
   sendWelcomeEmail,
-  sendDocumentUploadNotification,
   sendPaymentConfirmation,
   sendPasswordResetOTP,
   sendPasswordChangedEmail,

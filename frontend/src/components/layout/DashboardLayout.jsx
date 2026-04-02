@@ -47,7 +47,7 @@ const DashboardLayout = () => {
     { path: '/dashboard/my-certificates', icon: FaCertificate, label: 'My Certificates', color: 'orange' },
     { path: '/dashboard/my-courses', icon: FaBook, label: 'My Courses', color: 'pink' },
     { path: '/dashboard/payment-history', icon: FaReceipt, label: 'Payment History', color: 'indigo' },
-    { path: '/profile', icon: FaUser, label: 'Profile', color: 'gray' }
+
   ]
 
   // Teacher Menu
@@ -56,7 +56,6 @@ const DashboardLayout = () => {
     { path: '/dashboard/my-students', icon: FaUsers, label: 'My Students', color: 'green' },
     { path: '/dashboard/mark-attendance', icon: FaCalendarCheck, label: 'Mark Attendance', color: 'purple' },
     { path: '/dashboard/my-batches', icon: FaClipboardList, label: 'My Batches', color: 'orange' },
-    { path: '/profile', icon: FaUser, label: 'Profile', color: 'gray' }
   ]
 
   // Admin Menu
@@ -71,7 +70,6 @@ const DashboardLayout = () => {
     { path: '/dashboard/certificates', icon: FaCertificate, label: 'Certificates', color: 'yellow' },
     { path: '/dashboard/inquiries', icon: FaEnvelope, label: 'Inquiries', color: 'teal' },
     { path: '/dashboard/reports', icon: FaChartLine, label: 'Reports', color: 'cyan' },
-    { path: '/profile', icon: FaUser, label: 'Profile', color: 'gray' }
   ]
 
   let menu = studentMenu
@@ -177,19 +175,7 @@ const DashboardLayout = () => {
           })}
         </nav>
         
-        {/* Logout Button */}
-        <div className="p-4 border-t border-gray-800">
-          <button
-            onClick={handleLogout}
-            className="flex items-center w-full gap-3 px-4 py-3 rounded-xl text-red-400 hover:bg-red-900/20 hover:text-red-300 transition-all duration-200 group"
-          >
-            <FaSignOutAlt className="w-5 h-5 group-hover:scale-110 transition-transform" />
-            <span className="text-sm font-medium">Logout</span>
-          </button>
-        </div>
       </aside>
-
-      {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Header */}
         <header className="bg-white border-b border-gray-200 sticky top-0 z-20">
@@ -213,29 +199,6 @@ const DashboardLayout = () => {
 
               {/* Right Section */}
               <div className="flex items-center gap-2 sm:gap-4">
-                {/* Search - Desktop */}
-                <div className="hidden md:flex items-center bg-gray-100 rounded-xl px-3 py-2">
-                  <FaSearch className="text-gray-400 text-sm" />
-                  <input
-                    type="text"
-                    placeholder="Search..."
-                    className="bg-transparent border-none text-sm ml-2 focus:outline-none w-40 lg:w-64"
-                  />
-                </div>
-
-                {/* Dark Mode Toggle */}
-                <button
-                  onClick={() => setIsDarkMode(!isDarkMode)}
-                  className="p-2 rounded-lg text-gray-600 hover:bg-gray-100 transition"
-                >
-                  {isDarkMode ? <FaSun className="w-5 h-5" /> : <FaMoon className="w-5 h-5" />}
-                </button>
-
-                {/* Notifications */}
-                <button className="relative p-2 rounded-lg text-gray-600 hover:bg-gray-100 transition">
-                  <FaBell className="w-5 h-5" />
-                  <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
-                </button>
 
                 {/* User Menu */}
                 <div className="relative user-menu">

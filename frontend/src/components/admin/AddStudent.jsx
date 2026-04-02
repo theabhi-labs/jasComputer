@@ -11,6 +11,7 @@ import {
   FaHome, FaCity, FaMap, FaCode, FaInfoCircle, FaTimes,
   FaArrowLeft, FaArrowRight, FaSave
 } from 'react-icons/fa'
+import { Import } from 'lucide-react'
 
 const AddStudent = ({ isOpen, onClose, onSuccess, courses }) => {
   const { user } = useContext(AuthContext)

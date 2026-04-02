@@ -3,6 +3,7 @@ import { dashboardService } from '../../services'
 import { Card } from '../common'
 import { Doughnut, Bar } from 'react-chartjs-2'
 import { motion, AnimatePresence } from 'framer-motion'
+import LoaderJAS from '../common/Loader'
 import { 
   Users, UserCheck, BookOpen, Layers, 
   CreditCard, Calendar, Clock, Star,
@@ -53,7 +54,7 @@ const AdminDashboard = () => {
 
   useEffect(() => {
     fetchDashboard()
-    const interval = setInterval(fetchDashboard, 300000) // Auto-refresh every 5 mins
+    const interval = setInterval(fetchDashboard, 300000)
     return () => clearInterval(interval)
   }, [fetchDashboard])
 
@@ -148,7 +149,6 @@ const AdminDashboard = () => {
     }
   ]
 
-  // Animation variants
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -169,28 +169,23 @@ const AdminDashboard = () => {
     }
   }
 
-  if (loading) return (
-    <div className="flex flex-col justify-center items-center min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50">
-      <div className="relative">
-        <div className="w-20 h-20 border-4 border-slate-100 border-t-indigo-600 rounded-full animate-spin" />
-        <div className="absolute inset-0 flex items-center justify-center">
-          <Sparkles className="w-6 h-6 text-indigo-600 animate-pulse" />
-        </div>
+  // Fixed loader: takes only the content area, not full screen
+  if (loading) {
+    return (
+      <div className="h-full w-full flex items-center justify-center">
+        <LoaderJAS />
       </div>
-      <p className="mt-8 text-slate-400 font-bold tracking-widest text-xs uppercase animate-pulse">
-        Loading insights...
-      </p>
-    </div>
-  )
+    )
+  }
 
   return (
     <motion.div 
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50"
+      className="w-full"
     >
-      <div className="p-6 lg:p-10 space-y-8">
-        {/* Enhanced Header */}
+      <div className="p-4 sm:p-6 lg:p-10 space-y-8">
+        {/* Header Section */}
         <motion.div 
           initial={{ y: -20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
@@ -205,7 +200,7 @@ const AdminDashboard = () => {
                 Management Suite
               </span>
             </div>
-            <h1 className="text-4xl lg:text-5xl font-black text-slate-900 tracking-tight">
+            <h1 className="text-3xl lg:text-4xl font-black text-slate-900 tracking-tight">
               System Insights
             </h1>
             <p className="text-slate-500 font-medium flex items-center gap-2">
@@ -241,7 +236,7 @@ const AdminDashboard = () => {
           </div>
         </motion.div>
 
-        {/* Enhanced Stats Grid */}
+        {/* Stats Grid */}
         <motion.div 
           variants={containerVariants}
           initial="hidden"
@@ -286,7 +281,6 @@ const AdminDashboard = () => {
                   </div>
                 </div>
 
-                {/* Animated progress indicator */}
                 <AnimatePresence>
                   {hoveredStat === i && (
                     <motion.div
@@ -302,9 +296,9 @@ const AdminDashboard = () => {
           ))}
         </motion.div>
 
-        {/* Analytics Section - Enhanced */}
+        {/* Analytics Section */}
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-          {/* Doughnut Chart Card */}
+          {/* Doughnut Chart */}
           <motion.div
             initial={{ x: -20, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
@@ -372,7 +366,7 @@ const AdminDashboard = () => {
             </div>
           </motion.div>
 
-          {/* Bar Chart Card - Enhanced */}
+          {/* Bar Chart */}
           <motion.div
             initial={{ x: 20, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
@@ -461,9 +455,9 @@ const AdminDashboard = () => {
           </motion.div>
         </div>
 
-        {/* Activity Section - Enhanced */}
+        {/* Activity Section */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 pb-10">
-          {/* Recent Students Card */}
+          {/* Recent Students */}
           <motion.div
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
@@ -534,7 +528,7 @@ const AdminDashboard = () => {
             </div>
           </motion.div>
 
-          {/* Recent Inquiries Card */}
+          {/* Recent Inquiries */}
           <motion.div
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
@@ -614,25 +608,24 @@ const AdminDashboard = () => {
         </div>
       </div>
 
-      {/* Custom Scrollbar Styles */}
       <style>
-  {`
-    .custom-scrollbar::-webkit-scrollbar {
-      width: 4px;
-    }
-    .custom-scrollbar::-webkit-scrollbar-track {
-      background: #f1f5f9;
-      border-radius: 10px;
-    }
-    .custom-scrollbar::-webkit-scrollbar-thumb {
-      background: #cbd5e1;
-      border-radius: 10px;
-    }
-    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-      background: #94a3b8;
-    }
-  `}
-</style>
+        {`
+          .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+          }
+          .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 10px;
+          }
+          .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
+          }
+          .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+          }
+        `}
+      </style>
     </motion.div>
   )
 }
