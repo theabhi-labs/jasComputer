@@ -170,7 +170,7 @@ const Footer = () => {
 
             {/* AD Developer Button - Blue Theme */}
             <Link
-              to="/developer-portfolio"
+              to="https://www.rootabhi.com/"
               className="relative group w-full bg-gradient-to-r from-blue-600 via-cyan-600 to-blue-700 hover:from-blue-700 hover:via-cyan-700 hover:to-blue-800 text-white font-semibold py-3.5 rounded-2xl transition-all duration-500 transform hover:scale-105 shadow-xl shadow-blue-500/30 flex items-center justify-center gap-3 overflow-hidden"
               aria-label="View AD Developer Portfolio"
             >

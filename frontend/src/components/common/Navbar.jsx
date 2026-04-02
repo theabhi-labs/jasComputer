@@ -289,7 +289,7 @@ const Navbar = () => {
                 <p className="text-xs text-gray-500">Check certificate authenticity</p>
               </div>
             </Link>
-            <Link 
+            {/* <Link 
               to="/certificate-download" 
               className="flex items-center px-4 py-3 text-gray-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-cyan-50 rounded-xl transition-all duration-200"
               onClick={() => setIsOpen(false)}
@@ -303,7 +303,7 @@ const Navbar = () => {
                 <p className="font-medium">Download Certificate</p>
                 <p className="text-xs text-gray-500">Access your digital certificate</p>
               </div>
-            </Link>
+            </Link> */}
           </div>
 
           <div className="pt-4 mt-4 border-t border-gray-100 space-y-3">
