@@ -1,4 +1,3 @@
-// CourseForm.jsx - Only useEffect section corrected
 import React, { useState, useCallback, useEffect } from 'react'
 import { courseService } from '../../services'
 import { COURSE_LEVELS, COURSE_DURATION_UNITS, CERTIFICATE_TYPES, PROJECT_DIFFICULTY } from '../common/courseConstants'
@@ -72,18 +71,19 @@ const CourseForm = ({ course, onSuccess }) => {
   const [loading, setLoading] = useState(false)
   const [activeTab, setActiveTab] = useState('basic')
   const [errors, setErrors] = useState({})
+  const [message, setMessage] = useState({ type: '', text: '' })   // ✅ for toast / inline message
 
   // State for temporary input values
   const [tempTags, setTempTags] = useState('')
   const [tempSkills, setTempSkills] = useState('')
   const [tempMetaKeywords, setTempMetaKeywords] = useState('')
 
-  // ✅ FIXED: Initialize temp values from course data - THIS IS THE ONLY CORRECTION
+  // ✅ Initialize form data from existing course
   useEffect(() => {
     if (course && Object.keys(course).length > 0) {
       console.log("📝 EDIT MODE - Full course data:", course);
       
-      // 🔍 Debug: Check syllabus, projects, FAQs
+      // Debug logs
       console.log("🔍 SYLLABUS DATA:", course.syllabus);
       console.log("🔍 PROJECTS DATA:", course.projects);
       console.log("🔍 FAQS DATA:", course.faqs);
@@ -110,7 +110,6 @@ const CourseForm = ({ course, onSuccess }) => {
         console.log("⚠️ Created fullDescription from available data");
       }
       
-      // ✅ CRITICAL: Ensure syllabus, projects, faqs are properly set
       const syllabusData = Array.isArray(course.syllabus) ? course.syllabus : [];
       const projectsData = Array.isArray(course.projects) ? course.projects : [];
       const faqsData = Array.isArray(course.faqs) ? course.faqs : [];
@@ -135,7 +134,7 @@ const CourseForm = ({ course, onSuccess }) => {
         numberOfInstallments: course.numberOfInstallments || 1,
         level: course.level || COURSE_LEVELS.BEGINNER,
         skillsToLearn: course.skillsToLearn || [],
-        syllabus: syllabusData,  // ✅ Fixed
+        syllabus: syllabusData,
         careerOpportunities: course.careerOpportunities || [],
         careerPaths: course.careerPaths || [],
         certificateProvided: course.certificateProvided !== undefined ? course.certificateProvided : true,
@@ -145,7 +144,7 @@ const CourseForm = ({ course, onSuccess }) => {
           validity: '',
           additionalInfo: ''
         },
-        projects: projectsData,  // ✅ Fixed
+        projects: projectsData,
         learningOutcomes: course.learningOutcomes || [],
         prerequisites: course.prerequisites || [],
         targetAudience: course.targetAudience || [],
@@ -153,7 +152,7 @@ const CourseForm = ({ course, onSuccess }) => {
         features: course.features || [],
         benefits: course.benefits || [],
         whatIncludes: course.whatIncludes || [],
-        faqs: faqsData,  // ✅ Fixed
+        faqs: faqsData,
         seoMetadata: course.seoMetadata || {
           metaTitle: '',
           metaDescription: '',
@@ -188,9 +187,6 @@ const CourseForm = ({ course, onSuccess }) => {
     }
   }, [course]);
 
-  // ... Rest of your code remains EXACTLY THE SAME ...
-  // (All handlers, tabs, and return statement remain unchanged)
-  
   // Validate form
   const validateForm = useCallback(() => {
     const newErrors = {}
@@ -389,7 +385,23 @@ const CourseForm = ({ course, onSuccess }) => {
     }))
   }, [])
 
-  // Syllabus handlers
+  // ========== SYLLABUS HANDLERS – FIXED FOR TOPICS ==========
+  const handleModuleChange = useCallback((moduleIndex, field, value) => {
+    setFormData(prev => {
+      const newSyllabus = [...prev.syllabus]
+      newSyllabus[moduleIndex][field] = value
+      return { ...prev, syllabus: newSyllabus }
+    })
+  }, [])
+
+  const handleTopicChange = useCallback((moduleIndex, topicIndex, field, value) => {
+    setFormData(prev => {
+      const newSyllabus = [...prev.syllabus]
+      newSyllabus[moduleIndex].topics[topicIndex][field] = value
+      return { ...prev, syllabus: newSyllabus }
+    })
+  }, [])
+
   const addSyllabusModule = useCallback(() => {
     setFormData(prev => ({
       ...prev,
@@ -399,14 +411,6 @@ const CourseForm = ({ course, onSuccess }) => {
 
   const removeSyllabusModule = useCallback((index) => {
     setFormData(prev => ({ ...prev, syllabus: prev.syllabus.filter((_, i) => i !== index) }))
-  }, [])
-
-  const handleSyllabusChange = useCallback((index, field, value) => {
-    setFormData(prev => {
-      const newSyllabus = [...prev.syllabus]
-      newSyllabus[index][field] = value
-      return { ...prev, syllabus: newSyllabus }
-    })
   }, [])
 
   const addTopic = useCallback((moduleIndex) => {
@@ -424,6 +428,7 @@ const CourseForm = ({ course, onSuccess }) => {
       return { ...prev, syllabus: newSyllabus }
     })
   }, [])
+  // ============================================================
 
   // Project handlers
   const addProject = useCallback(() => {
@@ -462,16 +467,18 @@ const CourseForm = ({ course, onSuccess }) => {
     })
   }, [])
 
-  // Submit handler
+  // Submit handler – with inline messages instead of alerts
   const handleSubmit = async (e) => {
     e.preventDefault()
 
     if (!validateForm()) {
-      alert('Please fill in all required fields correctly')
+      setMessage({ type: 'error', text: 'Please fill in all required fields correctly.' })
+      setTimeout(() => setMessage({ type: '', text: '' }), 5000)
       return
     }
 
     setLoading(true)
+    setMessage({ type: '', text: '' })
 
     try {
       const payload = {
@@ -534,11 +541,13 @@ const CourseForm = ({ course, onSuccess }) => {
       if (course?._id) {
         console.log("🔄 UPDATING COURSE:", course._id)
         response = await courseService.updateCourse(course._id, payload)
-        alert('Course updated successfully!')
+        setMessage({ type: 'success', text: '✅ Course updated successfully!' })
+        setTimeout(() => setMessage({ type: '', text: '' }), 3000)
       } else {
         console.log("🆕 CREATING NEW COURSE")
         response = await courseService.createCourse(payload)
-        alert('Course created successfully!')
+        setMessage({ type: 'success', text: '🎉 Course created successfully!' })
+        setTimeout(() => setMessage({ type: '', text: '' }), 3000)
       }
 
       if (onSuccess) {
@@ -546,7 +555,8 @@ const CourseForm = ({ course, onSuccess }) => {
       }
     } catch (error) {
       console.error('❌ Error saving course:', error)
-      alert(error.response?.data?.message || 'Error saving course. Please try again.')
+      setMessage({ type: 'error', text: error.response?.data?.message || 'Error saving course. Please try again.' })
+      setTimeout(() => setMessage({ type: '', text: '' }), 5000)
     } finally {
       setLoading(false)
     }
@@ -564,6 +574,17 @@ const CourseForm = ({ course, onSuccess }) => {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      {/* ✅ Inline message banner */}
+      {message.text && (
+        <div className={`p-3 rounded-lg mb-4 ${
+          message.type === 'success'
+            ? 'bg-green-50 text-green-800 border border-green-200'
+            : 'bg-red-50 text-red-800 border border-red-200'
+        }`}>
+          {message.text}
+        </div>
+      )}
+
       {course?._id && (
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
           <p className="text-sm text-blue-800">
@@ -726,13 +747,13 @@ const CourseForm = ({ course, onSuccess }) => {
               <div key={moduleIndex} className="mb-6 border-l-4 border-blue-500 pl-4">
                 <div className="flex justify-between items-start mb-3">
                   <input type="text" placeholder="Module Name" value={module.moduleName}
-                    onChange={(e) => handleSyllabusChange(moduleIndex, 'moduleName', e.target.value)}
+                    onChange={(e) => handleModuleChange(moduleIndex, 'moduleName', e.target.value)}
                     className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 mr-2" />
                   <button type="button" onClick={() => removeSyllabusModule(moduleIndex)}
                     className="text-red-500 hover:text-red-700">Remove</button>
                 </div>
                 <textarea placeholder="Module Description" value={module.moduleDescription}
-                  onChange={(e) => handleSyllabusChange(moduleIndex, 'moduleDescription', e.target.value)}
+                  onChange={(e) => handleModuleChange(moduleIndex, 'moduleDescription', e.target.value)}
                   rows={2} className="w-full mb-3 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
                 <div className="ml-4">
                   <div className="flex justify-between items-center mb-2">
@@ -744,13 +765,13 @@ const CourseForm = ({ course, onSuccess }) => {
                     <div key={topicIndex} className="mb-3 pl-4 border-l-2 border-gray-200">
                       <div className="flex justify-between items-start mb-2">
                         <input type="text" placeholder="Topic Name" value={topic.topicName}
-                          onChange={(e) => handleSyllabusChange(moduleIndex, topicIndex, 'topicName', e.target.value)}
+                          onChange={(e) => handleTopicChange(moduleIndex, topicIndex, 'topicName', e.target.value)}
                           className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 mr-2" />
                         <button type="button" onClick={() => removeTopic(moduleIndex, topicIndex)}
                           className="text-red-500 hover:text-red-700 text-sm">Remove</button>
                       </div>
                       <input type="number" placeholder="Duration (hours)" value={topic.duration}
-                        onChange={(e) => handleSyllabusChange(moduleIndex, topicIndex, 'duration', parseInt(e.target.value) || 0)}
+                        onChange={(e) => handleTopicChange(moduleIndex, topicIndex, 'duration', parseInt(e.target.value) || 0)}
                         className="w-48 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
                     </div>
                   ))}
