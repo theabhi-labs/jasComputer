@@ -405,7 +405,7 @@ class CourseController extends BaseController {
     }
   }
 
-  
+
 async updateCourse(req, res) {
   try {
     console.log("=".repeat(50));
@@ -424,7 +424,7 @@ async updateCourse(req, res) {
     let updated = false;
     const updatedFields = [];
     
-    // ✅ ALLOWED FIELDS - COMPLETE LIST
+    // ==================== DIRECT FIELDS ====================
     const directFields = [
       'name', 'code', 'shortDescription', 'fullDescription', 'thumbnail', 'images',
       'category', 'subcategory', 'language', 'level', 'isActive', 'eligibility',
@@ -436,40 +436,43 @@ async updateCourse(req, res) {
         course[field] = req.body[field];
         updated = true;
         updatedFields.push(field);
-        console.log(`📝 Updated ${field}`);
+        console.log(`📝 Updated ${field}:`, req.body[field]);
       }
     }
     
-    // Duration
+    // ==================== DURATION (Object) ====================
     if (req.body.duration !== undefined) {
       course.duration = {
-        value: req.body.duration.value || course.duration.value,
-        unit: req.body.duration.unit || course.duration.unit
+        value: req.body.duration.value ?? course.duration.value,
+        unit: req.body.duration.unit ?? course.duration.unit
       };
       updated = true;
       updatedFields.push('duration');
-      console.log(`⏰ Updated duration: ${course.duration.value} ${course.duration.unit}`);
+      console.log(`⏰ Duration updated to: ${course.duration.value} ${course.duration.unit}`);
     }
     
-    // Discount
+    // ==================== DISCOUNT (Object with auto recalculation) ====================
     if (req.body.discount !== undefined) {
+      const newDiscount = req.body.discount;
       course.discount = {
-        isDiscounted: req.body.discount.isDiscounted || false,
-        discountPercentage: req.body.discount.discountPercentage || 0,
-        validUntil: req.body.discount.validUntil || null
+        isDiscounted: newDiscount.isDiscounted ?? course.discount?.isDiscounted ?? false,
+        discountPercentage: newDiscount.discountPercentage ?? course.discount?.discountPercentage ?? 0,
+        validUntil: newDiscount.validUntil ?? course.discount?.validUntil ?? null
       };
+      // Recalculate discountedPrice based on totalFees (current or updated)
+      const currentTotal = req.body.totalFees !== undefined ? req.body.totalFees : course.totalFees;
       if (course.discount.isDiscounted && course.discount.discountPercentage > 0) {
-        const discountedAmount = course.totalFees * (course.discount.discountPercentage / 100);
-        course.discount.discountedPrice = Math.round(course.totalFees - discountedAmount);
+        const discountedAmount = currentTotal * (course.discount.discountPercentage / 100);
+        course.discount.discountedPrice = Math.round(currentTotal - discountedAmount);
       } else {
         course.discount.discountedPrice = 0;
       }
       updated = true;
       updatedFields.push('discount');
-      console.log(`💰 Updated discount: ${course.discount.discountPercentage}%`);
+      console.log(`💰 Discount updated: ${course.discount.discountPercentage}% → discountedPrice ${course.discount.discountedPrice}`);
     }
     
-    // Array fields (convert if string with newlines)
+    // ==================== ARRAY FIELDS (from string with newlines or array) ====================
     const arrayFields = [
       'skillsToLearn', 'tags', 'learningOutcomes', 'prerequisites', 'targetAudience',
       'features', 'benefits', 'whatIncludes', 'careerOpportunities', 'eligibilityCriteria'
@@ -488,7 +491,7 @@ async updateCourse(req, res) {
       }
     }
     
-    // Nested arrays (syllabus, projects, faqs, careerPaths, batches)
+    // ==================== NESTED ARRAYS (SYLLABUS, PROJECTS, FAQS, CAREER PATHS, BATCHES) ====================
     if (req.body.syllabus !== undefined) {
       course.syllabus = req.body.syllabus;
       updated = true;
@@ -525,7 +528,7 @@ async updateCourse(req, res) {
       console.log(`📅 Updated batches: ${course.batches.length} batches`);
     }
     
-    // Objects
+    // ==================== OBJECTS ====================
     if (req.body.seoMetadata !== undefined) {
       course.seoMetadata = req.body.seoMetadata;
       updated = true;
@@ -545,9 +548,11 @@ async updateCourse(req, res) {
       return this.success(res, { course }, 'No changes made');
     }
     
+    // Save the course
     await course.save();
     console.log("✅ Save successful! Updated fields:", updatedFields);
     
+    // Fetch fresh course with populated references
     const freshCourse = await Course.findById(id)
       .populate('instructors', 'name email profilePicture bio')
       .populate('createdBy', 'name');
@@ -556,7 +561,8 @@ async updateCourse(req, res) {
     
   } catch (error) {
     console.error("❌ Update error:", error);
-    return this.error(res, error.message, 500);
+    console.error("Error stack:", error.stack);
+    return this.error(res, error.message || 'Failed to update course', 500);
   }
 }
 
