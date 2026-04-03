@@ -404,6 +404,8 @@ class CourseController extends BaseController {
       return this.error(res, error.message, 500);
     }
   }
+
+  
 async updateCourse(req, res) {
   try {
     console.log("=".repeat(50));
@@ -419,62 +421,26 @@ async updateCourse(req, res) {
       return this.error(res, 'Course not found', 404);
     }
     
-    console.log("💰 Current totalFees:", course.totalFees);
-    
     let updated = false;
     const updatedFields = [];
     
-    // ==================== BASIC FIELDS ====================
-    if (req.body.name !== undefined) {
-      course.name = req.body.name;
-      updated = true;
-      updatedFields.push('name');
-      console.log("📝 Updated name to:", course.name);
+    // ✅ ALLOWED FIELDS - COMPLETE LIST
+    const directFields = [
+      'name', 'code', 'shortDescription', 'fullDescription', 'thumbnail', 'images',
+      'category', 'subcategory', 'language', 'level', 'isActive', 'eligibility',
+      'totalFees', 'installmentAllowed', 'numberOfInstallments', 'certificateProvided'
+    ];
+    
+    for (const field of directFields) {
+      if (req.body[field] !== undefined) {
+        course[field] = req.body[field];
+        updated = true;
+        updatedFields.push(field);
+        console.log(`📝 Updated ${field}`);
+      }
     }
     
-    if (req.body.category !== undefined) {
-      course.category = req.body.category;
-      updated = true;
-      updatedFields.push('category');
-      console.log("📁 Updated category to:", course.category);
-    }
-    
-    if (req.body.subcategory !== undefined) {
-      course.subcategory = req.body.subcategory;
-      updated = true;
-      updatedFields.push('subcategory');
-      console.log("📂 Updated subcategory to:", course.subcategory);
-    }
-    
-    if (req.body.language !== undefined) {
-      course.language = req.body.language;
-      updated = true;
-      updatedFields.push('language');
-      console.log("🌐 Updated language to:", course.language);
-    }
-    
-    if (req.body.code !== undefined) {
-      course.code = req.body.code;
-      updated = true;
-      updatedFields.push('code');
-      console.log("🔢 Updated code to:", course.code);
-    }
-    
-    if (req.body.thumbnail !== undefined) {
-      course.thumbnail = req.body.thumbnail;
-      updated = true;
-      updatedFields.push('thumbnail');
-      console.log("🖼️ Updated thumbnail");
-    }
-    
-    if (req.body.images !== undefined) {
-      course.images = req.body.images;
-      updated = true;
-      updatedFields.push('images');
-      console.log("📸 Updated images");
-    }
-    
-    // ==================== DURATION ====================
+    // Duration
     if (req.body.duration !== undefined) {
       course.duration = {
         value: req.body.duration.value || course.duration.value,
@@ -482,39 +448,16 @@ async updateCourse(req, res) {
       };
       updated = true;
       updatedFields.push('duration');
-      console.log("⏰ Updated duration to:", course.duration.value, course.duration.unit);
+      console.log(`⏰ Updated duration: ${course.duration.value} ${course.duration.unit}`);
     }
     
-    // ==================== PRICING ====================
-    if (req.body.totalFees !== undefined) {
-      course.totalFees = Number(req.body.totalFees);
-      updated = true;
-      updatedFields.push('totalFees');
-      console.log("💰 Updated totalFees to:", course.totalFees);
-    }
-    
-    if (req.body.installmentAllowed !== undefined) {
-      course.installmentAllowed = req.body.installmentAllowed;
-      updated = true;
-      updatedFields.push('installmentAllowed');
-      console.log("💳 Updated installmentAllowed to:", course.installmentAllowed);
-    }
-    
-    if (req.body.numberOfInstallments !== undefined) {
-      course.numberOfInstallments = req.body.numberOfInstallments;
-      updated = true;
-      updatedFields.push('numberOfInstallments');
-      console.log("📆 Updated numberOfInstallments to:", course.numberOfInstallments);
-    }
-    
-    // ==================== DISCOUNT ====================
+    // Discount
     if (req.body.discount !== undefined) {
       course.discount = {
         isDiscounted: req.body.discount.isDiscounted || false,
         discountPercentage: req.body.discount.discountPercentage || 0,
         validUntil: req.body.discount.validUntil || null
       };
-      // Recalculate discounted price
       if (course.discount.isDiscounted && course.discount.discountPercentage > 0) {
         const discountedAmount = course.totalFees * (course.discount.discountPercentage / 100);
         course.discount.discountedPrice = Math.round(course.totalFees - discountedAmount);
@@ -523,118 +466,34 @@ async updateCourse(req, res) {
       }
       updated = true;
       updatedFields.push('discount');
-      console.log("💰 Updated discount to:", course.discount.discountPercentage, "%");
+      console.log(`💰 Updated discount: ${course.discount.discountPercentage}%`);
     }
     
-    // ==================== LEVEL & DESCRIPTIONS ====================
-    if (req.body.level !== undefined) {
-      course.level = req.body.level;
-      updated = true;
-      updatedFields.push('level');
-      console.log("📊 Updated level to:", course.level);
+    // Array fields (convert if string with newlines)
+    const arrayFields = [
+      'skillsToLearn', 'tags', 'learningOutcomes', 'prerequisites', 'targetAudience',
+      'features', 'benefits', 'whatIncludes', 'careerOpportunities', 'eligibilityCriteria'
+    ];
+    
+    for (const field of arrayFields) {
+      if (req.body[field] !== undefined) {
+        if (typeof req.body[field] === 'string') {
+          course[field] = req.body[field].split('\n').filter(item => item.trim());
+        } else if (Array.isArray(req.body[field])) {
+          course[field] = req.body[field];
+        }
+        updated = true;
+        updatedFields.push(field);
+        console.log(`📋 Updated ${field} with ${course[field].length} items`);
+      }
     }
     
-    if (req.body.shortDescription !== undefined) {
-      course.shortDescription = req.body.shortDescription;
-      updated = true;
-      updatedFields.push('shortDescription');
-      console.log("📝 Updated shortDescription");
-    }
-    
-    if (req.body.fullDescription !== undefined) {
-      course.fullDescription = req.body.fullDescription;
-      updated = true;
-      updatedFields.push('fullDescription');
-      console.log("📝 Updated fullDescription");
-    }
-    
-    // ==================== ARRAY FIELDS ====================
-    if (req.body.skillsToLearn !== undefined) {
-      course.skillsToLearn = Array.isArray(req.body.skillsToLearn) ? req.body.skillsToLearn : 
-        req.body.skillsToLearn.split(',').map(s => s.trim());
-      updated = true;
-      updatedFields.push('skillsToLearn');
-      console.log("🎯 Updated skillsToLearn:", course.skillsToLearn.length);
-    }
-    
-    if (req.body.tags !== undefined) {
-      course.tags = Array.isArray(req.body.tags) ? req.body.tags : 
-        req.body.tags.split(',').map(t => t.trim());
-      updated = true;
-      updatedFields.push('tags');
-      console.log("🏷️ Updated tags:", course.tags.length);
-    }
-    
-    if (req.body.learningOutcomes !== undefined) {
-      course.learningOutcomes = Array.isArray(req.body.learningOutcomes) ? req.body.learningOutcomes : 
-        req.body.learningOutcomes.split('\n').filter(l => l.trim());
-      updated = true;
-      updatedFields.push('learningOutcomes');
-      console.log("📚 Updated learningOutcomes:", course.learningOutcomes.length);
-    }
-    
-    if (req.body.prerequisites !== undefined) {
-      course.prerequisites = Array.isArray(req.body.prerequisites) ? req.body.prerequisites : 
-        req.body.prerequisites.split('\n').filter(p => p.trim());
-      updated = true;
-      updatedFields.push('prerequisites');
-      console.log("📋 Updated prerequisites:", course.prerequisites.length);
-    }
-    
-    if (req.body.targetAudience !== undefined) {
-      course.targetAudience = Array.isArray(req.body.targetAudience) ? req.body.targetAudience : 
-        req.body.targetAudience.split('\n').filter(t => t.trim());
-      updated = true;
-      updatedFields.push('targetAudience');
-      console.log("👥 Updated targetAudience:", course.targetAudience.length);
-    }
-    
-    if (req.body.features !== undefined) {
-      course.features = Array.isArray(req.body.features) ? req.body.features : 
-        req.body.features.split('\n').filter(f => f.trim());
-      updated = true;
-      updatedFields.push('features');
-      console.log("✨ Updated features:", course.features.length);
-    }
-    
-    if (req.body.benefits !== undefined) {
-      course.benefits = Array.isArray(req.body.benefits) ? req.body.benefits : 
-        req.body.benefits.split('\n').filter(b => b.trim());
-      updated = true;
-      updatedFields.push('benefits');
-      console.log("🎁 Updated benefits:", course.benefits.length);
-    }
-    
-    if (req.body.whatIncludes !== undefined) {
-      course.whatIncludes = Array.isArray(req.body.whatIncludes) ? req.body.whatIncludes : 
-        req.body.whatIncludes.split('\n').filter(w => w.trim());
-      updated = true;
-      updatedFields.push('whatIncludes');
-      console.log("📦 Updated whatIncludes:", course.whatIncludes.length);
-    }
-    
-    if (req.body.careerOpportunities !== undefined) {
-      course.careerOpportunities = Array.isArray(req.body.careerOpportunities) ? req.body.careerOpportunities : 
-        req.body.careerOpportunities.split('\n').filter(c => c.trim());
-      updated = true;
-      updatedFields.push('careerOpportunities');
-      console.log("💼 Updated careerOpportunities:", course.careerOpportunities.length);
-    }
-    
-    if (req.body.eligibilityCriteria !== undefined) {
-      course.eligibilityCriteria = Array.isArray(req.body.eligibilityCriteria) ? req.body.eligibilityCriteria : 
-        req.body.eligibilityCriteria.split('\n').filter(e => e.trim());
-      updated = true;
-      updatedFields.push('eligibilityCriteria');
-      console.log("📜 Updated eligibilityCriteria:", course.eligibilityCriteria.length);
-    }
-    
-    // ==================== NESTED ARRAYS (SYLLABUS, PROJECTS, FAQS) ====================
+    // Nested arrays (syllabus, projects, faqs, careerPaths, batches)
     if (req.body.syllabus !== undefined) {
       course.syllabus = req.body.syllabus;
       updated = true;
       updatedFields.push('syllabus');
-      console.log("📚 Updated syllabus with", course.syllabus.length, "modules");
+      console.log(`📚 Updated syllabus: ${course.syllabus.length} modules`);
     }
     
     if (req.body.projects !== undefined) {
@@ -642,86 +501,43 @@ async updateCourse(req, res) {
       course.totalProjects = course.projects.length;
       updated = true;
       updatedFields.push('projects');
-      console.log("🚀 Updated projects with", course.projects.length, "projects");
+      console.log(`🚀 Updated projects: ${course.projects.length} projects`);
     }
     
     if (req.body.faqs !== undefined) {
       course.faqs = req.body.faqs;
       updated = true;
       updatedFields.push('faqs');
-      console.log("❓ Updated FAQs with", course.faqs.length, "questions");
+      console.log(`❓ Updated FAQs: ${course.faqs.length} questions`);
     }
     
     if (req.body.careerPaths !== undefined) {
       course.careerPaths = req.body.careerPaths;
       updated = true;
       updatedFields.push('careerPaths');
-      console.log("💼 Updated careerPaths with", course.careerPaths.length, "paths");
+      console.log(`💼 Updated careerPaths: ${course.careerPaths.length} paths`);
     }
     
     if (req.body.batches !== undefined) {
       course.batches = req.body.batches;
       updated = true;
       updatedFields.push('batches');
-      console.log("📅 Updated batches with", course.batches.length, "batches");
+      console.log(`📅 Updated batches: ${course.batches.length} batches`);
     }
     
-    if (req.body.instructors !== undefined) {
-      course.instructors = req.body.instructors;
-      updated = true;
-      updatedFields.push('instructors');
-      console.log("👨‍🏫 Updated instructors");
-    }
-    
-    // ==================== OBJECT FIELDS ====================
+    // Objects
     if (req.body.seoMetadata !== undefined) {
       course.seoMetadata = req.body.seoMetadata;
       updated = true;
       updatedFields.push('seoMetadata');
-      console.log("🔍 Updated seoMetadata");
+      console.log(`🔍 Updated seoMetadata`);
     }
     
     if (req.body.certificateDetails !== undefined) {
       course.certificateDetails = req.body.certificateDetails;
       updated = true;
       updatedFields.push('certificateDetails');
-      console.log("🎓 Updated certificateDetails");
-    }
-    
-    if (req.body.certificateProvided !== undefined) {
-      course.certificateProvided = req.body.certificateProvided;
-      updated = true;
-      updatedFields.push('certificateProvided');
-      console.log("✅ Updated certificateProvided to:", course.certificateProvided);
-    }
-    
-    if (req.body.eligibility !== undefined) {
-      course.eligibility = req.body.eligibility;
-      updated = true;
-      updatedFields.push('eligibility');
-      console.log("📋 Updated eligibility to:", course.eligibility);
-    }
-    
-    if (req.body.isActive !== undefined) {
-      course.isActive = req.body.isActive;
-      updated = true;
-      updatedFields.push('isActive');
-      console.log("🔘 Updated isActive to:", course.isActive);
-    }
-    
-    // ==================== POPULARITY (Partial Update) ====================
-    if (req.body.popularity !== undefined) {
-      if (req.body.popularity.featured !== undefined) {
-        course.popularity.featured = req.body.popularity.featured;
-        updated = true;
-        updatedFields.push('popularity.featured');
-      }
-      if (req.body.popularity.sortOrder !== undefined) {
-        course.popularity.sortOrder = req.body.popularity.sortOrder;
-        updated = true;
-        updatedFields.push('popularity.sortOrder');
-      }
-      console.log("⭐ Updated popularity");
+      console.log(`🎓 Updated certificateDetails`);
     }
     
     if (!updated) {
@@ -729,35 +545,18 @@ async updateCourse(req, res) {
       return this.success(res, { course }, 'No changes made');
     }
     
-    console.log("💾 Saving to database...");
-    console.log("Updated fields:", updatedFields);
     await course.save();
-    console.log("✅ Save successful!");
-    
-    // Final discount recalculation (in case totalFees changed)
-    if (course.discount?.isDiscounted && course.discount.discountPercentage > 0) {
-      const discountedAmount = course.totalFees * (course.discount.discountPercentage / 100);
-      course.discount.discountedPrice = Math.round(course.totalFees - discountedAmount);
-      await course.save();
-      console.log("💰 Discount recalculated:", course.discount.discountedPrice);
-    }
+    console.log("✅ Save successful! Updated fields:", updatedFields);
     
     const freshCourse = await Course.findById(id)
       .populate('instructors', 'name email profilePicture bio')
       .populate('createdBy', 'name');
     
-    console.log("💰 Final totalFees:", freshCourse.totalFees);
-    console.log("=".repeat(50));
-    
-    return this.success(res, { 
-      course: freshCourse,
-      updatedFields: updatedFields
-    }, 'Course updated successfully');
+    return this.success(res, { course: freshCourse, updatedFields }, 'Course updated successfully');
     
   } catch (error) {
     console.error("❌ Update error:", error);
-    console.error("Error stack:", error.stack);
-    return this.error(res, error.message || 'Failed to update course', 500);
+    return this.error(res, error.message, 500);
   }
 }
 
