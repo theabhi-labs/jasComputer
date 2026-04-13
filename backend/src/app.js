@@ -72,7 +72,7 @@ const corsOptions = {
 
 // ✅ CORS must be FIRST — before helmet, body parsers, everything
 app.use(cors(corsOptions));
-app.options('*', cors(corsOptions)); // ✅ Same config for preflight
+app.options(/.*/, cors(corsOptions)) // ✅ Same config for preflight
 
 // Security
 app.use(helmet({
