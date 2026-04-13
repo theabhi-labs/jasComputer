@@ -10,13 +10,13 @@
   },
   "dependencies": {
     "@getbrevo/brevo": "^5.0.1",
-    "@sendinblue/client": "^3.3.1",
-    "axios": "^1.5.0",
+    "axios": "^1.15.0",
     "bcryptjs": "^2.4.3",
+    "body-parser": "^2.2.2",
     "cors": "^2.8.6",
     "date-fns": "^4.1.0",
     "dotenv": "^16.6.1",
-    "express": "^4.22.1",
+    "express": "^5.2.1",
     "express-rate-limit": "^6.10.0",
     "express-validator": "^7.3.1",
     "helmet": "^7.2.0",
@@ -33,10 +33,14 @@
     "razorpay": "^2.9.6",
     "slugify": "^1.6.8",
     "socket.io": "^4.7.2",
-    "twilio": "^4.19.3",
+    "twilio": "^5.13.1",
     "uuid": "^9.0.1"
   },
   "devDependencies": {
     "nodemon": "^3.0.1"
-  }
+  },
+  "overrides": {
+  "qs": "6.14.2",
+  "form-data": "4.0.4"
+}
 }
