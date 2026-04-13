@@ -140,7 +140,7 @@ const HomePage = () => {
       title: 'Proven Results', 
       desc: 'Track record of 90% success rate in competitive exams',
       color: 'yellow',
-      stats: '500+ Success Stories'
+      stats: '1K+ Success Stories'
     },
     { 
       icon: FaClock, 
@@ -221,8 +221,8 @@ const HomePage = () => {
                 
                 {/* Description */}
                 <p className="text-lg lg:text-xl mb-8 text-blue-100 leading-relaxed max-w-xl lg:max-w-full">
-                  Job-oriented courses: DCA, ADCA, Tally, Typing, MS Office with Govt. recognized certificates
-                </p>
+  Job-oriented courses: DCA, ADCA, Tally, Typing, MS Office — with placement training & interview preparation
+</p>
                 
                 {/* CTA Buttons */}
                 <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start mb-8">
@@ -313,7 +313,7 @@ const HomePage = () => {
                     
                     <div className="mt-6 pt-4 border-t border-white/20 text-center">
                       <p className="text-xs text-blue-200">
-                        ✨ Govt. Recognized Certificate • Job Assistance • Practical Training
+                        ✨ Certificate • Job Assistance • Practical Training
                       </p>
                     </div>
                   </div>
@@ -508,7 +508,7 @@ const HomePage = () => {
               <div className="text-white/80">Students Trained</div>
             </div>
             <div className="group">
-              <div className="text-5xl font-bold mb-2 group-hover:scale-110 transition-transform">10+</div>
+              <div className="text-5xl font-bold mb-2 group-hover:scale-110 transition-transform">5+</div>
               <div className="text-white/80">Expert Teachers</div>
             </div>
             <div className="group">
@@ -531,7 +531,7 @@ const HomePage = () => {
               Ready to Start Your Journey?
             </h2>
             <p className="text-xl mb-8 text-white/90 max-w-2xl mx-auto">
-              Join 500+ successful students who trusted JAS Computer Institute for their career growth
+              Join 1K+ successful students who trusted JAS Computer Institute for their career growth
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link 

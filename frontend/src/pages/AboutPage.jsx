@@ -47,9 +47,9 @@ const AboutPage = () => {
   ]
 
   const stats = [
-    { value: '10K+', label: 'Students Trained', icon: FaUsers, suffix: 'Happy Learners' },
+    { value: '1K+', label: 'Students Trained', icon: FaUsers, suffix: 'Happy Learners' },
     { value: '95%', label: 'Success Rate', icon: FaAward, suffix: 'Exam Pass Rate' },
-    { value: '50+', label: 'Expert Faculty', icon: FaChalkboardTeacher, suffix: 'Qualified Teachers' },
+    { value: '5+', label: 'Expert Faculty', icon: FaChalkboardTeacher, suffix: 'Qualified Teachers' },
     { value: '100+', label: 'Digital Courses', icon: FaBookOpen, suffix: 'Job-Oriented' }
   ]
 
@@ -57,15 +57,23 @@ const AboutPage = () => {
     { year: '2010', title: 'Founded', description: 'Started with 20 students in Suriyawan' },
     { year: '2015', title: '500+ Students', description: 'Expanded to serve over 500 students' },
     { year: '2020', title: 'Digital Transformation', description: 'Launched online learning platform' },
-    { year: '2024', title: '10K+ Alumni', description: 'Celebrating 10,000+ successful graduates' }
+    { year: '2024', title: '1K+ Alumni', description: 'Celebrating 500+ successful graduates' }
   ]
 
+  // Updated team members with Director and Faculty as per provided info
   const teamMembers = [
-    { name: 'Mr. Jitendra Singh', role: 'Founder & Director', experience: '15+ Years', expertise: 'Computer Science' },
-    { name: 'Mrs. Anjali Singh', role: 'Academic Head', experience: '12+ Years', expertise: 'IT & Programming' },
-    { name: 'Mr. Rajesh Kumar', role: 'Senior Faculty', experience: '10+ Years', expertise: 'Tally & Accounting' },
-    { name: 'Ms. Priya Sharma', role: 'Faculty', experience: '8+ Years', expertise: 'Web Development' }
+    { name: 'M A Siddiqui', role: 'Director & CEO', experience: '15+ Years', expertise: 'Leadership & Strategy' },
+    { name: 'Suman Yadav', role: ' Faculty', experience: '5+ Years', expertise: 'DCA / ADCA' },
+    { name: 'Sabana Bano', role: 'Faculty', experience: '10+ Years', expertise: 'Tally & Accounting' },
+    { name: 'Mohammad Afzal', role: 'Faculty', experience: '8+ Years', expertise: 'Web Development' }
   ]
+
+  // Contact information as provided
+  const contactInfo = {
+    phones: ['8756248193', '9129774092'],
+    address: 'ROKAIYA COMPLEX, PURANI BAZAR, SURIYAWAN, BHADOHI 221404 (UP)',
+    email: 'jascomputerinstitute@gmail.com'
+  }
 
   return (
     <>
@@ -92,19 +100,31 @@ const AboutPage = () => {
             "logo": "https://www.jascomputerinstitute.com/logo.png",
             "description": "Best computer training institute in Suriyawan offering DCA, ADCA, Tally, Typing, and Basic Computer courses.",
             "foundingDate": "2010",
+            "founder": {
+              "@type": "Person",
+              "name": "M A Siddiqui"
+            },
             "address": {
               "@type": "PostalAddress",
-              "streetAddress": "Chaumuhani, Purani Bazar",
+              "streetAddress": "ROKAIYA COMPLEX, PURANI BAZAR",
               "addressLocality": "Suriyawan",
               "addressRegion": "Uttar Pradesh",
-              "postalCode": "221403",
+              "postalCode": "221404",
               "addressCountry": "IN"
             },
-            "contactPoint": {
-              "@type": "ContactPoint",
-              "telephone": "+91-9369121091",
-              "contactType": "customer service"
-            },
+            "contactPoint": [
+              {
+                "@type": "ContactPoint",
+                "telephone": "+91-8756248193",
+                "contactType": "customer service"
+              },
+              {
+                "@type": "ContactPoint",
+                "telephone": "+91-9129774092",
+                "contactType": "customer service"
+              }
+            ],
+            "email": "jascomputerinstitute@gmail.com",
             "sameAs": [
               "https://www.facebook.com/jascomputer",
               "https://www.instagram.com/jascomputer",
@@ -224,7 +244,7 @@ const AboutPage = () => {
                 </h2>
                 <div className="space-y-5 text-gray-600 leading-relaxed">
                   <p>
-                    JAS Computer Institute was founded with a simple yet powerful mission: to bridge the gap between student potential and academic excellence. What started in a single room with 20 motivated students has evolved into Suriyawan's most trusted computer training center.
+                    JAS Computer Institute was founded in 2010 by <strong className="text-blue-600">M A Siddiqui</strong> with a simple yet powerful mission: to bridge the gap between student potential and academic excellence. What started in a single room with 20 motivated students has evolved into Suriyawan's most trusted computer training center.
                   </p>
                   <p>
                     We don't just teach computer skills; we build careers. Our focus on <strong className="text-blue-600">personalized mentorship</strong> and <strong className="text-blue-600">job-oriented training</strong> ensures that every student gets a clear roadmap to success.
@@ -232,7 +252,7 @@ const AboutPage = () => {
                   <div className="flex flex-wrap gap-4 pt-4">
                     <div className="flex items-center gap-2">
                       <FaCheckCircle className="text-green-500 text-sm" />
-                      <span className="text-sm text-gray-600">10,000+ Alumni</span>
+                      <span className="text-sm text-gray-600">1K+ Alumni</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <FaCheckCircle className="text-green-500 text-sm" />
@@ -240,7 +260,7 @@ const AboutPage = () => {
                     </div>
                     <div className="flex items-center gap-2">
                       <FaCheckCircle className="text-green-500 text-sm" />
-                      <span className="text-sm text-gray-600">Govt. Recognized Certificate</span>
+                      <span className="text-sm text-gray-600">placement training & interview preparation</span>
                     </div>
                   </div>
                 </div>
@@ -373,7 +393,7 @@ const AboutPage = () => {
           </div>
         </section>
 
-        {/* Team Section */}
+        {/* Team Section - Updated with Director and Faculty */}
         <section className="py-20 bg-white">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-12">
@@ -382,10 +402,10 @@ const AboutPage = () => {
                 <span className="text-blue-600 font-medium text-sm">Our Team</span>
               </div>
               <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">
-                Meet Our <span className="text-blue-600">Expert Faculty</span>
+                Leadership & <span className="text-blue-600">Expert Faculty</span>
               </h2>
               <p className="text-gray-600 max-w-2xl mx-auto">
-                Dedicated professionals committed to your success
+                Dedicated professionals committed to your success under the guidance of our Director, M A Siddiqui
               </p>
             </div>
             
@@ -401,6 +421,70 @@ const AboutPage = () => {
                   <p className="text-gray-400 text-xs mt-1">Expertise: {member.expertise}</p>
                 </div>
               ))}
+            </div>
+          </div>
+        </section>
+
+        {/* New Contact Information Section */}
+        <section className="py-20 bg-gradient-to-b from-gray-50 to-white">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-12">
+              <div className="inline-flex items-center gap-2 bg-blue-50 rounded-full px-4 py-1.5 mb-4">
+                <FaMapMarkerAlt className="text-blue-600 text-sm" />
+                <span className="text-blue-600 font-medium text-sm">Get in Touch</span>
+              </div>
+              <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">
+                Visit Our <span className="text-blue-600">Campus</span>
+              </h2>
+              <p className="text-gray-600 max-w-2xl mx-auto">
+                We'd love to hear from you. Reach out for course details, admissions, or any queries.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {/* Address Card */}
+              <div className="bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl transition border border-gray-100 text-center group">
+                <div className="inline-flex p-3 bg-red-50 rounded-xl text-red-500 mb-4 text-2xl group-hover:scale-110 transition">
+                  <FaMapMarkerAlt />
+                </div>
+                <h3 className="text-lg font-bold text-gray-900 mb-3">Our Address</h3>
+                <p className="text-gray-600 text-sm leading-relaxed">
+                  {contactInfo.address}
+                </p>
+              </div>
+
+              {/* Phone Card */}
+              <div className="bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl transition border border-gray-100 text-center group">
+                <div className="inline-flex p-3 bg-green-50 rounded-xl text-green-500 mb-4 text-2xl group-hover:scale-110 transition">
+                  <FaPhone />
+                </div>
+                <h3 className="text-lg font-bold text-gray-900 mb-3">Call Us</h3>
+                <div className="space-y-2">
+                  {contactInfo.phones.map((phone, idx) => (
+                    <a 
+                      key={idx}
+                      href={`tel:+91${phone}`}
+                      className="block text-blue-600 hover:text-blue-700 font-medium text-sm"
+                    >
+                      {phone}
+                    </a>
+                  ))}
+                </div>
+              </div>
+
+              {/* Email Card */}
+              <div className="bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl transition border border-gray-100 text-center group">
+                <div className="inline-flex p-3 bg-blue-50 rounded-xl text-blue-500 mb-4 text-2xl group-hover:scale-110 transition">
+                  <FaEnvelope />
+                </div>
+                <h3 className="text-lg font-bold text-gray-900 mb-3">Email Us</h3>
+                <a 
+                  href={`mailto:${contactInfo.email}`}
+                  className="text-blue-600 hover:text-blue-700 text-sm break-all"
+                >
+                  {contactInfo.email}
+                </a>
+              </div>
             </div>
           </div>
         </section>

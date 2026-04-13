@@ -34,9 +34,9 @@ const Home = () => {
   ]
 
   const stats = [
-    { value: '10,000+', label: 'Students Trained', icon: FaUsers },
+    { value: '1K', label: 'Students Trained', icon: FaUsers },
     { value: '95%', label: 'Success Rate', icon: FaTrophy },
-    { value: '50+', label: 'Expert Faculty', icon: FaChalkboardTeacher },
+    { value: '5+', label: 'Expert Faculty', icon: FaChalkboardTeacher },
     { value: '100+', label: 'Courses', icon: FaBook }
   ]
 

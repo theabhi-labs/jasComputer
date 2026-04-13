@@ -99,7 +99,6 @@ const getEmailWrapper = (title, content, color = "#1e3a8a") => `
     </div>
     <div style="background: #f1f5f9; padding: 20px; text-align: center; font-size: 11px; color: #64748b; border-top: 1px solid #e2e8f0;">
       <p style="margin: 0;">&copy; ${new Date().getFullYear()} JAS Computer Institute & Training Center. All rights reserved.</p>
-      <p style="margin: 5px 0 0 0;">An ISO 9001:2015 Certified Institute | Registered under Govt. of India</p>
     </div>
   </div>
 </body>

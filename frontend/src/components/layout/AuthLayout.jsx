@@ -69,7 +69,7 @@ const AuthLayout = () => {
                 ))}
               </div>
               <div>
-                <p className="text-sm font-semibold">Join 10,000+ students</p>
+                <p className="text-sm font-semibold">Join 1K+ students</p>
                 <p className="text-xs text-blue-200">Trusted by top educators</p>
               </div>
             </div>

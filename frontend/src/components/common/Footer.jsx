@@ -1,6 +1,10 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
-import { FaFacebookF, FaTwitter, FaInstagram, FaYoutube, FaMapMarkerAlt, FaPhone, FaEnvelope, FaChevronRight, FaClock, FaLaptopCode, FaWhatsapp } from 'react-icons/fa'
+import { 
+  FaFacebookF, FaTwitter, FaInstagram, FaYoutube, 
+  FaMapMarkerAlt, FaPhone, FaEnvelope, FaChevronRight, 
+  FaClock, FaLaptopCode, FaWhatsapp, FaShieldAlt 
+} from 'react-icons/fa'
 
 const Footer = () => {
   const currentYear = new Date().getFullYear()
@@ -8,7 +12,7 @@ const Footer = () => {
   const socialLinks = [
     { icon: FaFacebookF, href: "https://facebook.com/jascomputer", color: "hover:bg-blue-600", label: "Facebook" },
     { icon: FaTwitter, href: "https://twitter.com/jascomputer", color: "hover:bg-sky-500", label: "Twitter" },
-    { icon: FaInstagram, href: "https://instagram.com/jascomputer", color: "hover:bg-pink-600", label: "Instagram" },
+    { icon: FaInstagram, href: "https://instagram.com/jascomputer", color: "hover:bg-gradient-to-tr from-yellow-500 via-pink-500 to-purple-600", label: "Instagram" },
     { icon: FaYoutube, href: "https://youtube.com/@jascomputer", color: "hover:bg-red-600", label: "YouTube" },
   ]
 
@@ -18,39 +22,40 @@ const Footer = () => {
     { name: 'About Us', link: '/about', description: 'About JAS Computer Institute' },
     { name: 'Contact', link: '/contact', description: 'Contact JAS Computer Institute' },
     { name: 'Verify Certificate', link: '/verify-certificate', description: 'Verify Your Certificate' },
-    { name: 'Download Certificate', link: '/certificate-download', description: 'Download Digital Certificate' },
   ]
 
   const popularCourses = [
-    { name: 'DCA Course', link: '/courses/dca', duration: '6 Months' },
-    { name: 'ADCA Course', link: '/courses/adca', duration: '12 Months' },
-    { name: 'Tally with GST', link: '/courses/tally', duration: '3 Months' },
-    { name: 'Basic Computer', link: '/courses/basic-computer', duration: '2 Months' },
-    { name: 'Typing Course', link: '/courses/typing', duration: '2 Months' },
+    { name: 'DCA Course', duration: '6 Months' },
+    { name: 'ADCA Course', duration: '12 Months' },
+    { name: 'Tally with GST',  duration: '3 Months' },
+    { name: 'Basic Computer',  duration: '2 Months' },
+    { name: 'Typing Course',  duration: '2 Months' },
   ]
 
-  const handleWhatsAppClick = () => {
-    window.open('https://wa.me/919369121091?text=Hi%20JAS%20Computer%20Institute%2C%20I%27m%20interested%20in%20your%20courses', '_blank')
-  }
-
   return (
-    <footer className="w-full bg-gradient-to-br from-gray-900 via-gray-900 to-gray-800 text-gray-300 pt-16 pb-8">
-      {/* Top Section: Full Width Background, Contained Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12 mb-12">
+    <footer className="relative w-full bg-[#030712] text-gray-400 pt-16 pb-6 overflow-hidden border-t border-blue-500/20">
+      {/* AI Glow Background Effects */}
+      <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-600/10 blur-[120px] rounded-full -z-10"></div>
+      <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-purple-600/10 blur-[120px] rounded-full -z-10"></div>
 
-          {/* Brand Identity - SEO Optimized */}
-          <div className="space-y-5">
-            <Link to="/" className="inline-block">
-              <h3 className="text-2xl lg:text-3xl font-black text-white tracking-tight">
-                JAS<span className="text-blue-500 text-3xl lg:text-4xl">.</span>Computer
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-16">
+
+          {/* Brand Identity */}
+          <div className="space-y-6">
+            <Link to="/" className="group inline-block">
+              <h3 className="text-2xl lg:text-3xl font-black text-white tracking-tighter">
+                JAS<span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-400">.COMPUTER</span>
               </h3>
-              <p className="text-xs text-blue-400 mt-1 font-medium">Institute & Training Center</p>
+              <div className="flex items-center gap-2 mt-1">
+                <span className="h-[1px] w-8 bg-blue-500"></span>
+                <p className="text-[10px] uppercase tracking-[0.2em] text-blue-400 font-bold">Training Center</p>
+              </div>
             </Link>
-            <p className="text-gray-400 leading-relaxed text-sm">
-              Best computer training institute in Chaumuhani, Suriyawan. Job-oriented courses with government recognized certificates.
+            <p className="text-sm leading-relaxed text-gray-400">
+              Empowering the next generation with advanced technical skills. JAS Computer Institute is your gateway to a professional digital career.
             </p>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
               {socialLinks.map((social, idx) => (
                 <a
                   key={idx}
@@ -58,29 +63,28 @@ const Footer = () => {
                   aria-label={social.label}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className={`w-9 h-9 flex items-center justify-center rounded-lg bg-gray-800 border border-gray-700 transition-all duration-300 ${social.color} hover:text-white hover:-translate-y-1 hover:shadow-lg`}
+                  className={`w-10 h-10 flex items-center justify-center rounded-xl bg-white/5 border border-white/10 transition-all duration-500 ${social.color} hover:text-white hover:-translate-y-2 hover:shadow-[0_0_15px_rgba(59,130,246,0.5)]`}
                 >
-                  <social.icon size={16} />
+                  <social.icon size={18} />
                 </a>
               ))}
             </div>
           </div>
 
-          {/* Quick Links - SEO Friendly */}
+          {/* Quick Links */}
           <div>
-            <h4 className="text-white font-bold text-lg mb-6 relative inline-block">
-              Quick Links
-              <span className="absolute -bottom-2 left-0 w-10 h-0.5 bg-blue-500 rounded-full"></span>
+            <h4 className="text-white font-bold text-lg mb-8 flex items-center gap-2">
+              <span className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></span>
+              Explore
             </h4>
-            <ul className="space-y-3">
+            <ul className="grid grid-cols-1 gap-4">
               {quickLinks.map((item) => (
                 <li key={item.name}>
                   <Link
                     to={item.link}
-                    className="group flex items-center text-gray-400 hover:text-blue-400 transition-colors text-sm"
-                    title={item.description}
+                    className="group flex items-center text-sm hover:text-blue-400 transition-all duration-300"
                   >
-                    <FaChevronRight className="text-[8px] mr-2 text-blue-500 opacity-0 group-hover:opacity-100 transition-all -ml-4 group-hover:ml-0" />
+                    <FaChevronRight className="text-[10px] mr-0 opacity-0 group-hover:mr-2 group-hover:opacity-100 transition-all text-blue-500" />
                     {item.name}
                   </Link>
                 </li>
@@ -88,169 +92,109 @@ const Footer = () => {
             </ul>
           </div>
 
-          {/* Popular Courses - SEO Rich */}
+          {/* Courses */}
           <div>
-            <h4 className="text-white font-bold text-lg mb-6 relative inline-block">
-              Popular Courses
-              <span className="absolute -bottom-2 left-0 w-10 h-0.5 bg-blue-500 rounded-full"></span>
+            <h4 className="text-white font-bold text-lg mb-8 flex items-center gap-2">
+              <span className="w-2 h-2 bg-cyan-500 rounded-full animate-pulse"></span>
+              Trending Programs
             </h4>
-            <ul className="space-y-3">
+            <ul className="space-y-4">
               {popularCourses.map((course) => (
                 <li key={course.name}>
                   <Link
                     to={course.link}
-                    className="group flex items-center justify-between text-gray-400 hover:text-blue-400 transition-colors text-sm"
+                    className="group flex items-center justify-between p-2 -ml-2 rounded-lg hover:bg-white/5 transition-all border border-transparent hover:border-white/10"
                   >
-                    <span className="flex items-center">
-                      <FaChevronRight className="text-[8px] mr-2 text-blue-500 opacity-0 group-hover:opacity-100 transition-all -ml-4 group-hover:ml-0" />
-                      {course.name}
+                    <span className="text-sm group-hover:text-cyan-400 transition-colors">{course.name}</span>
+                    <span className="text-[10px] px-2 py-1 rounded-md bg-blue-500/10 text-blue-400 border border-blue-500/20 group-hover:bg-blue-500 group-hover:text-white transition-all">
+                      {course.duration}
                     </span>
-                    <span className="text-xs text-gray-600 group-hover:text-blue-400">{course.duration}</span>
                   </Link>
                 </li>
               ))}
             </ul>
           </div>
 
-          {/* Contact & Timing Section */}
-          <div className="space-y-6">
-            <div>
-              <h4 className="text-white font-bold text-lg mb-6 relative inline-block">
-                Contact Info
-                <span className="absolute -bottom-2 left-0 w-10 h-0.5 bg-blue-500 rounded-full"></span>
-              </h4>
+          {/* Contact Section */}
+          <div className="space-y-8">
+            <div className="bg-white/5 border border-white/10 rounded-2xl p-5 backdrop-blur-sm">
+              <h4 className="text-white font-bold mb-4 text-sm uppercase tracking-widest">Connect With Us</h4>
               <div className="space-y-4">
-                <div className="flex items-start gap-3 group">
-                  <div className="p-2.5 bg-gray-800 rounded-lg group-hover:bg-blue-600 transition-colors">
-                    <FaMapMarkerAlt className="text-blue-400 group-hover:text-white text-sm" />
-                  </div>
-                  <div>
-                    <p className="text-gray-400 group-hover:text-gray-300 transition-colors text-sm">
-                      Chaumuhani, Purani Bazar
-                    </p>
-                    <p className="text-gray-500 text-xs">Suriyawan, Uttar Pradesh - 221403</p>
+                <div className="flex gap-4 group">
+                  <FaMapMarkerAlt className="text-blue-500 mt-1 flex-shrink-0 group-hover:scale-110 transition-transform" />
+                  <p className="text-xs leading-relaxed group-hover:text-gray-200 transition-colors uppercase">
+                    ROKAIYA COMPLEX, PURANI BAZAR, SURIYAWAN, BHADOHI 221404 (UP)
+                  </p>
+                </div>
+                <div className="flex gap-4 group">
+                  <FaPhone className="text-cyan-500 mt-1 flex-shrink-0 group-hover:rotate-12 transition-transform" />
+                  <div className="text-xs">
+                    <a href="tel:+918756248193" className="block hover:text-white transition-colors tracking-widest">+91 8756248193</a>
+                    <a href="tel:+919129774092" className="block hover:text-white transition-colors tracking-widest mt-1">+91 9129774092</a>
                   </div>
                 </div>
-                <div className="flex items-center gap-3 group">
-                  <div className="p-2.5 bg-gray-800 rounded-lg group-hover:bg-blue-600 transition-colors">
-                    <FaPhone className="text-blue-400 group-hover:text-white text-sm" />
-                  </div>
-                  <div>
-                    <a href="tel:+919369121091" className="text-gray-400 group-hover:text-gray-300 transition-colors text-sm block">
-                      +91 9369121091
-                    </a>
-                    <a href="tel:+918887456321" className="text-gray-500 text-xs hover:text-blue-400 transition-colors">
-                      +91 8887456321
-                    </a>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3 group">
-                  <div className="p-2.5 bg-gray-800 rounded-lg group-hover:bg-blue-600 transition-colors">
-                    <FaEnvelope className="text-blue-400 group-hover:text-white text-sm" />
-                  </div>
-                  <a href="mailto:jasinstitute.suriyawan@gmail.com" className="text-gray-400 group-hover:text-gray-300 transition-colors text-sm break-all">
-                    jasinstitute.suriyawan@gmail.com
+                <div className="flex gap-4 group">
+                  <FaEnvelope className="text-purple-500 mt-1 flex-shrink-0 group-hover:-translate-y-1 transition-transform" />
+                  <a href="mailto:jascomputerinstitute@gmail.com" className="text-xs break-all hover:text-white transition-colors tracking-wider">
+                    jascomputerinstitute@gmail.com
                   </a>
                 </div>
               </div>
             </div>
 
-            {/* Timing Section - Blue Theme */}
-            <div className="bg-blue-500/10 rounded-xl p-4 border border-blue-500/20">
-              <div className="flex items-center gap-2 mb-3">
-                <FaClock className="text-blue-500 text-lg" />
-                <h5 className="text-white font-semibold text-sm">Opening Hours</h5>
-              </div>
-              <div className="space-y-1">
-                <p className="text-gray-300 text-sm font-medium">Monday - Saturday</p>
-                <p className="text-blue-400 text-lg font-bold">10:00 AM - 6:00 PM</p>
-                <p className="text-gray-500 text-xs mt-2">Sunday Closed</p>
-              </div>
-            </div>
+            {/* Developer Button - AI Style */}
+          {/* Developer Button - Slim & Sleek Version */}
+<a
+  href="https://www.rootabhi.com/"
+  target="_blank"
+  rel="noopener noreferrer"
+  className="relative group flex items-center gap-3 p-2.5 px-4 rounded-xl bg-white/[0.03] border border-white/10 hover:border-blue-500/50 transition-all duration-500 overflow-hidden"
+>
+  {/* Hover Glow Effect */}
+  <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
 
-            {/* AD Developer Button - Blue Theme */}
-            <Link
-              to="https://www.rootabhi.com/"
-              className="relative group w-full bg-gradient-to-r from-blue-600 via-cyan-600 to-blue-700 hover:from-blue-700 hover:via-cyan-700 hover:to-blue-800 text-white font-semibold py-3.5 rounded-2xl transition-all duration-500 transform hover:scale-105 shadow-xl shadow-blue-500/30 flex items-center justify-center gap-3 overflow-hidden"
-              aria-label="View AD Developer Portfolio"
-            >
-              {/* Animated background effect */}
-              <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+  {/* Icon Container - Small & Subtle */}
+  <div className="relative z-10 flex items-center justify-center w-8 h-8 rounded-lg bg-blue-500/10 text-blue-400 group-hover:bg-blue-500 group-hover:text-white transition-all duration-500 shadow-inner">
+    <FaLaptopCode size={14} className="group-hover:scale-110 transition-transform" />
+  </div>
 
-              {/* Icon with pulse effect */}
-              <div className="relative">
-                <FaLaptopCode className="text-xl group-hover:rotate-12 transition-transform duration-300" />
-                <div className="absolute inset-0 animate-ping rounded-full bg-white/30 opacity-0 group-hover:opacity-100"></div>
-              </div>
+  {/* Text Content - Slim Layout */}
+  <div className="relative z-10 flex flex-col">
+    <span className="text-[9px] uppercase tracking-[0.15em] text-gray-500 group-hover:text-blue-400 transition-colors leading-none mb-1">
+      Designer & Developer
+    </span>
+    <span className="text-xs font-bold text-gray-300 group-hover:text-white transition-colors tracking-wide">
+      Abhishek Yadav
+    </span>
+  </div>
 
-              <span className="relative text-base tracking-wide">View Developer Portfolio</span>
-
-              {/* Animated arrow */}
-              <FaChevronRight className="relative text-sm group-hover:translate-x-1 transition-transform duration-300" />
-            </Link>
+  {/* Arrow Icon - Animated */}
+  <FaChevronRight className="ml-auto text-[10px] text-gray-600 group-hover:text-blue-400 group-hover:translate-x-1 transition-all" />
+</a>
           </div>
         </div>
 
-        {/* Bottom Bar: Copyright & Terms - SEO Friendly */}
-        <div className="pt-8 border-t border-gray-800 flex flex-col md:flex-row justify-between items-center gap-4 text-xs">
-          <div className="text-center md:text-left">
-            <p className="text-gray-500">
-              © {currentYear} <span className="text-blue-400 font-medium">JAS Computer Institute & Training Center</span>. All rights reserved.
-            </p>
-            <p className="text-gray-600 text-xs mt-1">
-              Best Computer Training Center in Chaumuhani, Suriyawan | Govt. Recognized Certificate
-            </p>
+        {/* Bottom Bar */}
+        <div className="pt-8 border-t border-white/5 flex flex-col lg:flex-row justify-between items-center gap-6">
+          <div className="flex items-center gap-4">
+             <div className="flex items-center gap-2 px-3 py-1.5 bg-green-500/10 border border-green-500/20 rounded-full">
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                <span className="text-[10px] text-green-500 font-bold uppercase tracking-wider">Server Online</span>
+             </div>
+             <p className="text-[10px] text-gray-500 font-medium">
+               © {currentYear} JAS COMPUTER INSTITUTE & TRAINING CENTER
+             </p>
           </div>
-          <div className="flex flex-wrap gap-6 justify-center">
-            <a href="/privacy-policy" className="text-gray-500 hover:text-blue-400 transition-colors text-xs">
-              Privacy Policy
-            </a>
-            <a href="/terms-of-service" className="text-gray-500 hover:text-blue-400 transition-colors text-xs">
-              Terms of Service
-            </a>
-            <a href="/refund-policy" className="text-gray-500 hover:text-blue-400 transition-colors text-xs">
-              Refund Policy
-            </a>
-            <a href="/sitemap.xml" className="text-gray-500 hover:text-blue-400 transition-colors text-xs">
-              Sitemap
-            </a>
+          
+          <div className="flex flex-wrap gap-6 items-center">
+            {['Privacy', 'Terms', 'Refund', 'Sitemap'].map((link) => (
+              <a key={link} href={`/${link.toLowerCase()}`} className="text-[10px] uppercase tracking-widest font-bold hover:text-blue-400 transition-colors">
+                {link}
+              </a>
+            ))}
           </div>
         </div>
       </div>
-
-      {/* Structured Data for SEO */}
-      <script type="application/ld+json">
-        {JSON.stringify({
-          "@context": "https://schema.org",
-          "@type": "LocalBusiness",
-          "name": "JAS Computer Institute & Training Center",
-          "image": "https://www.jascomputerinstitute.com/logo.jpg",
-          "description": "Best computer training institute in Chaumuhani, Suriyawan offering DCA, ADCA, Tally, Basic Computer, and Typing courses with government recognized certificates.",
-          "address": {
-            "@type": "PostalAddress",
-            "streetAddress": "Chaumuhani, Purani Bazar",
-            "addressLocality": "Suriyawan",
-            "addressRegion": "Uttar Pradesh",
-            "postalCode": "221404",
-            "addressCountry": "IN"
-          },
-          "geo": {
-            "@type": "GeoCoordinates",
-            "latitude": "25.4567",
-            "longitude": "82.4567"
-          },
-          "url": "https://www.jascomputerinstitute.com",
-          "telephone": "+919369121091",
-          "openingHours": "Mo-Sa 10:00-18:00",
-          "priceRange": "₹₹",
-          "sameAs": [
-            "https://facebook.com/jascomputer",
-            "https://instagram.com/jascomputer",
-            "https://twitter.com/jascomputer",
-            "https://youtube.com/@jascomputer"
-          ]
-        })}
-      </script>
     </footer>
   )
 }

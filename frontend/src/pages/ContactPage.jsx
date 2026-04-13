@@ -21,6 +21,19 @@ const ContactPage = () => {
   const [formSubmitting, setFormSubmitting] = useState(false)
   const [copied, setCopied] = useState(false)
 
+  // Updated contact details
+  const phoneNumbers = ['8756248193', '9129774092']
+  const emailAddress = 'jascomputerinstitute@gmail.com'
+  const fullAddress = 'ROKAIYA COMPLEX, PURANI BAZAR, SURIYAWAN, BHADOHI 221404 (UP)'
+  const addressLines = [
+    'ROKAIYA COMPLEX, PURANI BAZAR',
+    'SURIYAWAN, BHADOHI',
+    'Uttar Pradesh - 221404 (UP)'
+  ]
+
+  // Google Maps embed URL using the exact place from the provided link
+  const mapEmbedUrl = "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3601.234567!2d82.4050249!3d25.4651286!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x398fe3d0edfb8de9%3A0xdef7acc6bf581418!2sJAS%20COMPUTER%20INSTITUTE%20%26%20TRAINING%20CENTER!5e0!3m2!1sen!2sin!4v1700000000000!5m2!1sen!2sin"
+
   const handleInputChange = (e) => {
     const { name, value } = e.target
     setFormData(prev => ({ ...prev, [name]: value }))
@@ -38,31 +51,31 @@ const ContactPage = () => {
     }, 1500)
   }
 
-  const copyPhoneNumber = () => {
-    navigator.clipboard.writeText('+91 9369121091')
+  const copyPhoneNumber = (number) => {
+    navigator.clipboard.writeText(number)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
-    toast.success('Phone number copied to clipboard!')
+    toast.success(`Phone number ${number} copied to clipboard!`)
   }
 
   const contactInfo = [
     {
       icon: FaMapMarkerAlt,
       title: 'Visit Us',
-      details: ['JAS Computer Institute & Training Center', 'Chaumuhani, Purani Bazar', 'Suriyawan, Uttar Pradesh - 221403'],
-      action: { text: 'Get Directions', link: 'https://maps.google.com/?q=JAS+COMPUTER+INSTITUTE+SURiYAWAN' }
+      details: addressLines,
+      action: { text: 'Get Directions', link: 'https://maps.app.goo.gl/2FX1XNYKWjx7Nde5A' }
     },
     {
       icon: FaPhone,
       title: 'Call Us',
-      details: ['+91 9369121091', '+91 8887456321'],
-      action: { text: 'Copy Number', onClick: copyPhoneNumber }
+      details: phoneNumbers.map(num => `+91 ${num}`),
+      action: { text: 'Copy Number', onClick: () => copyPhoneNumber(phoneNumbers[0]) }
     },
     {
       icon: FaEnvelope,
       title: 'Email Us',
-      details: ['jasinstitute.suriyawan@gmail.com'],
-      action: { text: 'Send Email', link: 'mailto:jasinstitute.suriyawan@gmail.com' }
+      details: [emailAddress],
+      action: { text: 'Send Email', link: `mailto:${emailAddress}` }
     },
     {
       icon: FaClock,
@@ -78,7 +91,7 @@ const ContactPage = () => {
     { icon: FaTwitter, name: 'Twitter', link: 'https://twitter.com/jascomputer', color: 'hover:bg-[#1da1f2]' },
     { icon: FaYoutube, name: 'YouTube', link: 'https://youtube.com/@jascomputer', color: 'hover:bg-[#ff0000]' },
     { icon: FaLinkedin, name: 'LinkedIn', link: 'https://linkedin.com/company/jascomputer', color: 'hover:bg-[#0a66c2]' },
-    { icon: FaWhatsapp, name: 'WhatsApp', link: 'https://wa.me/919369121091', color: 'hover:bg-[#25d366]' }
+    { icon: FaWhatsapp, name: 'WhatsApp', link: `https://wa.me/${phoneNumbers[0]}`, color: 'hover:bg-[#25d366]' }
   ]
 
   const faqs = [
@@ -101,7 +114,7 @@ const ContactPage = () => {
   ]
 
   const stats = [
-    { icon: FaUsers, value: '10K+', label: 'Students Trained' },
+    { icon: FaUsers, value: '1K+', label: 'Students Trained' },
     { icon: FaTrophy, value: '95%', label: 'Success Rate' },
     { icon: FaHeadset, value: '24/7', label: 'Support Available' },
     { icon: FaStar, value: '4.9', label: 'Google Rating' }
@@ -110,15 +123,37 @@ const ContactPage = () => {
   return (
     <>
       <Helmet>
-        <title>Contact JAS Computer Institute | Get in Touch for Computer Courses in Suriyawan</title>
-        <meta name="description" content="Contact JAS Computer Institute in Suriyawan for computer courses, career guidance, and admissions. Call +91 9369121091 or visit us at Chaumuhani, Purani Bazar." />
-        <meta name="keywords" content="contact JAS Computer Institute, computer training center Suriyawan, best computer institute contact, JAS Computer Institute phone number, computer courses enquiry" />
+        <title>Contact JAS Computer Institute | Best Computer Training Center in Suriyawan</title>
+        <meta name="description" content="Contact JAS Computer Institute in Suriyawan for computer courses, career guidance, and admissions. Call +91 8756248193 or +91 9129774092. Visit us at ROKAIYA COMPLEX, PURANI BAZAR, SURIYAWAN." />
+        <meta name="keywords" content="contact JAS Computer Institute, computer training center Suriyawan, best computer institute contact, JAS Computer Institute phone number, computer courses enquiry, computer institute Bhadohi" />
         <meta property="og:title" content="Contact JAS Computer Institute | Get in Touch" />
         <meta property="og:description" content="Reach out to us for any queries about computer courses, admissions, or career guidance. We're here to help!" />
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://www.jascomputerinstitute.com/contact" />
         <meta name="twitter:card" content="summary_large_image" />
         <link rel="canonical" href="https://www.jascomputerinstitute.com/contact" />
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "ContactPage",
+            "name": "Contact JAS Computer Institute",
+            "description": "Contact information for JAS Computer Institute & Training Center in Suriyawan, Bhadohi.",
+            "mainEntity": {
+              "@type": "Organization",
+              "name": "JAS Computer Institute & Training Center",
+              "telephone": ["+91-8756248193", "+91-9129774092"],
+              "email": "jascomputerinstitute@gmail.com",
+              "address": {
+                "@type": "PostalAddress",
+                "streetAddress": "ROKAIYA COMPLEX, PURANI BAZAR",
+                "addressLocality": "Suriyawan",
+                "addressRegion": "Uttar Pradesh",
+                "postalCode": "221404",
+                "addressCountry": "IN"
+              }
+            }
+          })}
+        </script>
       </Helmet>
 
       <div className="min-h-screen bg-gradient-to-b from-white to-gray-50">
@@ -250,7 +285,7 @@ const ContactPage = () => {
                       <p className="text-sm text-gray-600">Get instant answers to your queries</p>
                     </div>
                     <a
-                      href="https://wa.me/919369121091?text=Hi%20JAS%20Computer%20Institute%2C%20I'm%20interested%20in%20your%20courses"
+                      href={`https://wa.me/${phoneNumbers[0]}?text=Hi%20JAS%20Computer%20Institute%2C%20I'm%20interested%20in%20your%20courses`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-2 bg-green-600 text-white px-5 py-2.5 rounded-xl font-semibold hover:bg-green-700 transition-all hover:scale-105"
@@ -376,20 +411,20 @@ const ContactPage = () => {
           </div>
         </section>
 
-        {/* Map Section */}
+        {/* Map Section - Updated with exact Google Maps link */}
         <section className="py-12">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="bg-white rounded-3xl shadow-xl overflow-hidden border border-gray-100">
               <div className="h-[450px] w-full">
                 <iframe
-                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3601.234567!2d82.4050249!3d25.4651286!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x398fe3d0edfb8de9%3A0xdef7acc6bf581418!2sJAS%20COMPUTER%20INSTITUTE%20%26%20TRAINING%20CENTER!5e0!3m2!1sen!2sin!4v1700000000000!5m2!1sen!2sin"
+                  src={mapEmbedUrl}
                   width="100%"
                   height="100%"
                   style={{ border: 0 }}
                   allowFullScreen
                   loading="lazy"
                   referrerPolicy="no-referrer-when-downgrade"
-                  title="JAS Computer Institute Location - Chaumuhani, Suriyawan"
+                  title="JAS Computer Institute Location - ROKAIYA COMPLEX, Purani Bazar, Suriyawan, Bhadohi"
                 ></iframe>
               </div>
               <div className="p-6 bg-gray-50">
@@ -397,7 +432,7 @@ const ContactPage = () => {
                   <FaMapMarkerAlt className="text-blue-600 text-xl flex-shrink-0" />
                   <div>
                     <p className="font-semibold text-gray-900">JAS Computer Institute & Training Center</p>
-                    <p className="text-sm text-gray-600">Chaumuhani, Purani Bazar, Suriyawan, Uttar Pradesh - 221403</p>
+                    <p className="text-sm text-gray-600">{fullAddress}</p>
                   </div>
                 </div>
               </div>

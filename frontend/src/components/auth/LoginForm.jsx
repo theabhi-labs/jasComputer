@@ -219,32 +219,6 @@ const LoginForm = () => {
               Sign In <FaArrowRight className="inline ml-2 text-xs" />
             </Button>
           </form>
-
-          {/* Divider */}
-          <div className="relative my-8">
-            <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-slate-100"></span></div>
-            <div className="relative flex justify-center text-xs uppercase"><span className="bg-white px-4 text-slate-400 font-bold tracking-tighter">Demo Access</span></div>
-          </div>
-
-          {/* Demo Accounts - Quick Select Cards */}
-          <div className="grid grid-cols-3 gap-3">
-            {demoAccounts.map((demo, idx) => (
-              <button
-                key={idx}
-                onClick={() => { 
-                  setEmail(demo.email); 
-                  setPassword(demo.password); 
-                  setUserType(demo.role);
-                  setNeedsVerification(false);
-                  setError('');
-                }}
-                className="flex flex-col items-center py-2 px-1 rounded-xl bg-slate-50 border border-slate-100 hover:border-blue-200 hover:bg-blue-50 text-slate-600 hover:text-blue-600 transition-all group"
-              >
-                <span className="text-[10px] font-black uppercase mb-0.5">{demo.type}</span>
-                <span className="text-[8px] opacity-0 group-hover:opacity-100 transition-opacity truncate w-full px-1">Click to fill</span>
-              </button>
-            ))}
-          </div>
         </div>
 
         {/* Footer Link */}

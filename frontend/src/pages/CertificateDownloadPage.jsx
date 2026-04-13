@@ -80,8 +80,7 @@ const CertificateDownloadPage = () => {
                 <div className="flex justify-center items-center gap-4 mb-2">
                     <FaAward className="text-yellow-600 text-4xl" />
                     <div>
-                        <h3 className="text-blue-900 text-sm font-bold tracking-[0.3em] uppercase">An ISO 9001:2015 Certified Institute</h3>
-                        <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Registered under Govt. of India</p>
+                        <h3 className="text-blue-900 text-sm font-bold tracking-[0.3em] uppercase"> Certified Institute</h3>
                     </div>
                     <FaShieldAlt className="text-blue-900 text-4xl" />
                 </div>

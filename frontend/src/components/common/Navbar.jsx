@@ -146,21 +146,6 @@ const Navbar = () => {
                       <p className="text-xs text-gray-500">Check certificate authenticity</p>
                     </div>
                   </Link>
-                  <Link 
-                    to="/certificate-download" 
-                    className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-cyan-50 hover:text-blue-600 transition-all duration-200"
-                    onClick={() => setShowCertificateMenu(false)}
-                  >
-                    <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
-                      <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                      </svg>
-                    </div>
-                    <div>
-                      <p className="font-semibold">Download Certificate</p>
-                      <p className="text-xs text-gray-500">Access your digital certificate</p>
-                    </div>
-                  </Link>
                 </div>
               )}
             </div>

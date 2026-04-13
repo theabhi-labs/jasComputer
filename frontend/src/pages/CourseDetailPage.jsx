@@ -58,7 +58,7 @@ const CourseDetailPage = () => {
 
   const handleWhatsAppEnquiry = () => {
     const message = `Hi, I'm interested in the "${course.name}" course. Can you please provide more details?`
-    window.open(`https://wa.me/919369121091?text=${encodeURIComponent(message)}`, '_blank')
+    window.open(`https://wa.me/918756248193,?text=${encodeURIComponent(message)}`, '_blank')
   }
 
   const toggleModule = (index) => {
@@ -186,19 +186,11 @@ const CourseDetailPage = () => {
                   <FaStar className="text-yellow-400" />
                   <FaStar className="text-yellow-400" />
                   <FaStarHalfAlt className="text-yellow-400" />
-                  <span className="ml-2 font-semibold">4.8 (128 reviews)</span>
+                  <span className="ml-2 font-semibold">4.8 (58 reviews)</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <FaUsers />
-                  <span>{course.popularity?.enrollments || 245} students enrolled</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <FaRegClock />
-                  <span>{getTotalDuration()} hours</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <FaVideo />
-                  <span>{getTotalLectures()} lectures</span>
+                  <span>{course.popularity?.enrollments || 100} students enrolled</span>
                 </div>
               </div>
             </div>
@@ -240,7 +232,7 @@ const CourseDetailPage = () => {
                 </button>
                 
                 <p className="text-xs text-gray-500 text-center mt-4">
-                  ✅ 7-day money-back guarantee • Lifetime access • Certificate included
+                   Lifetime access portal • Certificate included
                 </p>
               </div>
             </div>
@@ -484,20 +476,8 @@ const CourseDetailPage = () => {
                 </h3>
                 <ul className="space-y-3 text-sm">
                   <li className="flex items-center gap-3 text-gray-600">
-                    <FaVideo className="text-blue-500" />
-                    <span>{getTotalLectures()} on-demand lectures</span>
-                  </li>
-                  <li className="flex items-center gap-3 text-gray-600">
-                    <FaClock className="text-blue-500" />
-                    <span>{getTotalDuration()} hours of video content</span>
-                  </li>
-                  <li className="flex items-center gap-3 text-gray-600">
                     <FaDownload className="text-blue-500" />
                     <span>Downloadable resources</span>
-                  </li>
-                  <li className="flex items-center gap-3 text-gray-600">
-                    <FaMobileAlt className="text-blue-500" />
-                    <span>Mobile & TV access</span>
                   </li>
                   <li className="flex items-center gap-3 text-gray-600">
                     <FaCertificate className="text-blue-500" />
@@ -545,13 +525,6 @@ const CourseDetailPage = () => {
                   </ul>
                 </div>
               )}
-
-              {/* Guarantee Card */}
-              <div className="bg-gradient-to-r from-blue-50 to-cyan-50 rounded-xl p-6 border border-blue-100 text-center">
-                <FaShieldAlt className="text-3xl text-blue-500 mx-auto mb-3" />
-                <h4 className="font-bold text-gray-900 mb-1">30-Day Money-Back Guarantee</h4>
-                <p className="text-xs text-gray-600">Not satisfied? Get a full refund within 30 days</p>
-              </div>
             </div>
           </div>
         </div>
