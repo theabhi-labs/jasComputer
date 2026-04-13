@@ -1,13 +1,16 @@
-import React, { useState } from 'react'
+import React, { useState, useRef } from 'react'
 import { publicService } from '../../services'
 import { Input, Button, Alert, Card } from '../common'
-import { FaCheckCircle, FaTimesCircle, FaDownload, FaShare, FaQrcode, FaCertificate } from 'react-icons/fa'
+import { FaCheckCircle, FaTimesCircle, FaDownload, FaShare, FaQrcode, FaCertificate, FaStamp } from 'react-icons/fa'
+import html2canvas from 'html2canvas'
+import jsPDF from 'jspdf'
 
 const VerifyCertificate = () => {
   const [certificateId, setCertificateId] = useState('')
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState(null)
   const [error, setError] = useState('')
+  const certificateRef = useRef(null)
 
   const handleVerify = async (e) => {
     e.preventDefault()
@@ -40,9 +43,35 @@ const VerifyCertificate = () => {
     alert('Verification link copied to clipboard!')
   }
 
-  const handleDownload = () => {
-    // In production, download PDF
-    alert('Download functionality coming soon')
+  const handleDownloadPDF = async () => {
+    if (!certificateRef.current) return
+
+    try {
+      const element = certificateRef.current
+      const canvas = await html2canvas(element, {
+        scale: 2, // high resolution
+        backgroundColor: '#ffffff',
+        logging: false,
+        useCORS: true,
+      })
+      const imgData = canvas.toDataURL('image/png')
+      
+      // Use landscape A4 (297x210 mm) to fit certificate width better
+      const pdf = new jsPDF({
+        orientation: 'landscape',
+        unit: 'mm',
+        format: 'a4',
+      })
+      
+      const imgWidth = 277 // A4 landscape usable width (mm)
+      const imgHeight = (canvas.height * imgWidth) / canvas.width
+      
+      pdf.addImage(imgData, 'PNG', 10, 10, imgWidth, imgHeight)
+      pdf.save(`certificate_${result?.certificateId || 'download'}.pdf`)
+    } catch (err) {
+      console.error('PDF generation failed', err)
+      alert('Failed to generate PDF. Please try again.')
+    }
   }
 
   return (
@@ -82,93 +111,93 @@ const VerifyCertificate = () => {
 
         {error && <Alert type="error" message={error} onClose={() => setError('')} />}
 
-        {/* Verification Result */}
+        {/* Verification Result - Certificate Template */}
         {result && (
-          <Card>
-            <div className="text-center">
-              <div className="mb-4">
-                <FaCheckCircle className="w-16 h-16 text-green-500 mx-auto" />
-              </div>
-              
-              <h2 className="text-2xl font-bold text-green-600 mb-2">
-                Valid Certificate
-              </h2>
-              <p className="text-gray-600 mb-6">This certificate is authentic and verified</p>
+          <div className="flex flex-col items-center">
+            {/* This div is captured for PDF */}
+            <div
+              ref={certificateRef}
+              className="w-full max-w-4xl bg-white rounded-xl shadow-2xl overflow-hidden border-8 border-double border-amber-700 mb-6"
+            >
+              {/* Inner certificate border */}
+              <div className="border-4 border-amber-600 m-2 p-6 relative">
+                {/* Decorative corners */}
+                <div className="absolute top-2 left-2 w-8 h-8 border-t-4 border-l-4 border-amber-700"></div>
+                <div className="absolute top-2 right-2 w-8 h-8 border-t-4 border-r-4 border-amber-700"></div>
+                <div className="absolute bottom-2 left-2 w-8 h-8 border-b-4 border-l-4 border-amber-700"></div>
+                <div className="absolute bottom-2 right-2 w-8 h-8 border-b-4 border-r-4 border-amber-700"></div>
 
-              {/* Certificate Details */}
-              <div className="border rounded-lg p-6 bg-gray-50 mb-6">
+                {/* Logo / Seal */}
                 <div className="text-center mb-4">
-                  <FaCertificate className="w-12 h-12 text-primary-600 mx-auto mb-2" />
-                  <h3 className="text-xl font-bold text-gray-900">Certificate of Completion</h3>
+                  <FaStamp className="w-16 h-16 text-amber-700 mx-auto mb-2" />
+                  <h2 className="text-3xl font-serif font-bold text-gray-800">JAS Computer Institute</h2>
+                  <p className="text-gray-600 text-sm">(Recognised Computer Training Center)</p>
+                  <p className="text-gray-500 text-xs">ROKAIYA COMPLEX, PURANI BAZAR, SURIYAWAN, BHADOHI - 221404</p>
                 </div>
-                
-                <div className="space-y-3 text-left">
-                  <div className="border-b pb-2">
-                    <p className="text-sm text-gray-500">Certificate ID</p>
-                    <p className="font-mono text-sm font-medium">{result.certificateId}</p>
+
+                <div className="border-t-2 border-gray-300 my-4"></div>
+
+                <h3 className="text-center text-2xl font-serif font-bold uppercase tracking-wider text-amber-800 mb-4">
+                  Certificate of Completion
+                </h3>
+
+                <p className="text-center text-gray-700 mb-6">
+                  This is to certify that
+                </p>
+
+                <p className="text-center text-3xl font-bold text-gray-900 mb-2">
+                  {result.studentName}
+                </p>
+                <p className="text-center text-gray-600 mb-1">S/o, D/o {result.fatherName}</p>
+
+                <p className="text-center text-gray-700 mt-6 mb-2">
+                  has successfully completed the course
+                </p>
+
+                <p className="text-center text-2xl font-bold text-primary-700 mb-2">
+                  {result.course}
+                </p>
+
+                <p className="text-center text-gray-700">
+                  Duration: {result.duration} &nbsp;|&nbsp; Enrollment No: {result.enrollmentNo}
+                </p>
+
+                {result.grade && result.percentage && (
+                  <p className="text-center text-gray-700">
+                    Grade: {result.grade} &nbsp;|&nbsp; Percentage: {result.percentage}%
+                  </p>
+                )}
+
+                <div className="flex justify-between items-end mt-10">
+                  <div className="text-center">
+                    <div className="w-40 border-t border-gray-800 pt-1"></div>
+                    <p className="text-sm text-gray-600 mt-1">Date: {new Date(result.issueDate).toLocaleDateString('en-IN')}</p>
                   </div>
-                  <div className="border-b pb-2">
-                    <p className="text-sm text-gray-500">Student Name</p>
-                    <p className="font-medium text-lg">{result.studentName}</p>
-                  </div>
-                  <div className="border-b pb-2">
-                    <p className="text-sm text-gray-500">Father's Name</p>
-                    <p className="font-medium">{result.fatherName}</p>
-                  </div>
-                  <div className="border-b pb-2">
-                    <p className="text-sm text-gray-500">Enrollment No.</p>
-                    <p className="font-mono">{result.enrollmentNo}</p>
-                  </div>
-                  <div className="border-b pb-2">
-                    <p className="text-sm text-gray-500">Course</p>
-                    <p className="font-medium">{result.course}</p>
-                  </div>
-                  <div className="border-b pb-2">
-                    <p className="text-sm text-gray-500">Duration</p>
-                    <p>{result.duration}</p>
-                  </div>
-                  {result.grade && (
-                    <div className="border-b pb-2">
-                      <p className="text-sm text-gray-500">Grade</p>
-                      <p className="font-bold text-primary-600">{result.grade}</p>
-                    </div>
-                  )}
-                  {result.percentage && (
-                    <div className="border-b pb-2">
-                      <p className="text-sm text-gray-500">Percentage</p>
-                      <p className="font-bold text-primary-600">{result.percentage}%</p>
-                    </div>
-                  )}
-                  <div className="border-b pb-2">
-                    <p className="text-sm text-gray-500">Issue Date</p>
-                    <p>{new Date(result.issueDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500">Issued By</p>
-                    <p className="font-medium">{result.issuedBy}</p>
+                  <div className="text-center">
+                    <div className="w-40 border-t border-gray-800 pt-1"></div>
+                    <p className="text-sm font-semibold text-gray-800 mt-1">M A Siddiqui</p>
+                    <p className="text-xs text-gray-500">Director & CEO</p>
                   </div>
                 </div>
 
-                {/* QR Code Placeholder */}
-                <div className="mt-6 p-4 bg-white rounded-lg border text-center">
-                  <FaQrcode className="w-24 h-24 text-gray-600 mx-auto mb-2" />
-                  <p className="text-xs text-gray-500">Scan QR code to verify</p>
+                <div className="text-center mt-8 text-xs text-gray-500">
+                  <FaQrcode className="inline mr-1" /> Certificate ID: {result.certificateId}
                 </div>
-              </div>
-
-              {/* Actions */}
-              <div className="flex space-x-3">
-                <Button variant="outline" className="flex-1" onClick={handleDownload}>
-                  <FaDownload className="inline mr-2" />
-                  Download PDF
-                </Button>
-                <Button variant="outline" className="flex-1" onClick={handleShare}>
-                  <FaShare className="inline mr-2" />
-                  Share
-                </Button>
               </div>
             </div>
-          </Card>
+
+            {/* Action Buttons */}
+            <div className="flex space-x-3 w-full max-w-md">
+              <Button variant="outline" className="flex-1" onClick={handleDownloadPDF}>
+                <FaDownload className="inline mr-2" />
+                Download PDF
+              </Button>
+              <Button variant="outline" className="flex-1" onClick={handleShare}>
+                <FaShare className="inline mr-2" />
+                Share
+              </Button>
+            </div>
+          </div>
         )}
       </div>
     </div>
