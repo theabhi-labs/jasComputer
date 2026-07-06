@@ -15,22 +15,6 @@ router.get('/super-admin',
   dashboardController.getSuperAdminDashboard
 );
 
-// Admin Dashboard
-router.get('/admin', 
-  authorize(ROLES.SUPER_ADMIN, ROLES.ADMIN), 
-  dashboardController.getAdminDashboard
-);
 
-// Teacher Dashboard
-router.get('/teacher', 
-  authorize(ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.TEACHER), 
-  dashboardController.getTeacherDashboard
-);
-
-// Student Dashboard
-router.get('/student', 
-  authorize(ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.TEACHER), 
-  dashboardController.getStudentDashboard
-);
 
 export default router;

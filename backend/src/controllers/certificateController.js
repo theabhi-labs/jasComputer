@@ -1,5 +1,5 @@
 import Certificate from '../models/Certificate.js';
-import Student from '../models/Student.js';
+// import Student from '../models/Student.js';
 import Course from '../models/Course.js';
 import BaseController from './baseController.js';
 import { MESSAGES } from '../constants/messages.js';

@@ -1,10 +1,7 @@
-import Student from '../models/Student.js';
-import User from '../models/User.js';
+// import Student from '../models/Student.js';
+// import User from '../models/User.js';
 import Course from '../models/Course.js';
-import Batch from '../models/Batch.js';
-import Fee from '../models/Fee.js';
-import Attendance from '../models/Attendance.js';
-import Inquiry from '../models/Inquiry.js';
+// import Fee from '../models/Fee.js';
 import BaseController from './baseController.js';
 import { MESSAGES } from '../constants/messages.js';
 
@@ -14,15 +11,11 @@ class DashboardController extends BaseController {
     try {
       const [
         totalStudents,
-        totalTeachers,
         totalAdmins,
         totalCourses,
-        totalBatches,
-        totalInquiries,
         totalFeesCollected,
         pendingFees,
         recentStudents,
-        recentInquiries
       ] = await Promise.all([
         Student.countDocuments({ isDeleted: false }),
         User.countDocuments({ role: 'teacher', isDeleted: false }),

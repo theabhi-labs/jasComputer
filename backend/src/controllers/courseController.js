@@ -1,5 +1,4 @@
 import Course from '../models/Course.js';
-import Batch from '../models/Batch.js';
 import BaseController from './baseController.js';
 import { MESSAGES } from '../constants/messages.js';
 

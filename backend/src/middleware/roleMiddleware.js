@@ -1,8 +1,7 @@
 // src/middleware/roleMiddleware.js
 
 import { ROLES, ROLE_PERMISSIONS } from '../constants/roles.js';
-import Batch from '../models/Batch.js';
-import Student from '../models/Student.js';
+// import Student from '../models/Student.js';
 
 // ✅ AUTHORIZE ROLES (FINAL VERSION)
 export const authorize = (...roles) => {

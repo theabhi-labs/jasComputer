@@ -14,19 +14,12 @@ const __dirname = path.dirname(__filename);
 dotenv.config();
 
 // Import routes
-import authRoutes from './routes/authRoutes.js';
-import studentRoutes from './routes/studentRoutes.js';
+// import studentRoutes from './routes/studentRoutes.js';
 import courseRoutes from './routes/courseRoutes.js';
-import batchRoutes from './routes/batchRoutes.js';
-import feeRoutes from './routes/feeRoutes.js';
-import attendanceRoutes from './routes/attendanceRoutes.js';
+// import feeRoutes from './routes/feeRoutes.js';
 import certificateRoutes from './routes/certificateRoutes.js';
 import dashboardRoutes from './routes/dashboardRoutes.js';
-import inquiryRoutes from './routes/inquiryRoutes.js';
-import publicRoutes from './routes/publicRoutes.js';
-import uploadRoutes from './routes/uploadRoutes.js';
-import userRoutes from './routes/userRoutes.js';
-import teacherRoutes from './routes/teacherRoutes.js';
+// import userRoutes from './routes/userRoutes.js';
 
 // Import middleware
 import { errorMiddleware, notFound } from './middleware/errorMiddleware.js';
@@ -104,19 +97,12 @@ app.get('/health', (req, res) => {
 });
 
 // API Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/students', studentRoutes);
+// app.use('/api/students', studentRoutes);
 app.use('/api/courses', courseRoutes);
-app.use('/api/batches', batchRoutes);
-app.use('/api/fees', feeRoutes);
-app.use('/api/attendance', attendanceRoutes);
+// app.use('/api/fees', feeRoutes);
 app.use('/api/certificates', certificateRoutes);
 app.use('/api/dashboard', dashboardRoutes);
-app.use('/api/inquiries', inquiryRoutes);
-app.use('/api/public', publicRoutes);
-app.use('/api/uploads', uploadRoutes);
-app.use('/api/users', userRoutes);
-app.use('/api/teachers', teacherRoutes);
+// app.use('/api/users', userRoutes);
 
 
 // 404 handler
