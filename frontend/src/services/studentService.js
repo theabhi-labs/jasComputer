@@ -36,6 +36,27 @@ export const studentService = {
     return response;
   },
 
+  // Upload student documents (local files)
+  uploadDocuments: async (studentId, formData) => {
+    const response = await api.post(`/students/${studentId}/documents`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+    return response;
+  },
+
+  // Upload student document from URL
+  uploadDocumentByUrl: async (studentId, data) => {
+    const response = await api.post(`/students/${studentId}/documents/url`, data);
+    return response;
+  },
+
+  // Delete student document
+  deleteDocument: async (studentId, docId) => {
+    const response = await api.delete(`/students/${studentId}/documents/${docId}`);
+    return response;
+  },
+
+
 };
 
 export default studentService;

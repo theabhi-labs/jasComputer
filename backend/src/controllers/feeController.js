@@ -59,14 +59,32 @@ export const createFee = async (req, res) => {
 // ============================================================
 export const getAllFees = async (req, res) => {
   try {
-    const { page = 1, limit = 10, status, student, course } = req.query;
+    const { page = 1, limit = 10, status, student, course, search } = req.query;
     const filter = {};
     if (status) filter.status = status;
     if (student) filter.student = student;
     if (course) filter.course = course;
 
+    if (search) {
+      const matchedStudents = await Student.find({
+        $or: [
+          { name: { $regex: search, $options: 'i' } },
+          { enrollment: { $regex: search, $options: 'i' } },
+        ],
+      }).select('_id');
+      const studentIds = matchedStudents.map(s => s._id);
+      filter.student = { $in: studentIds };
+    }
+
     const fees = await Fee.find(filter)
-      .populate('student', 'name email mobile createdAt')
+      .populate({
+        path: 'student',
+        select: 'name email mobile enrollment admissionDate course createdAt',
+        populate: {
+          path: 'course',
+          select: 'name code'
+        }
+      })
       .populate('course', 'name code totalFees')
       .limit(limit * 1)
       .skip((page - 1) * limit)
