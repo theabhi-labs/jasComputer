@@ -105,12 +105,12 @@ const LoaderJAS = ({ message = "Loading Excellence..." }) => {
         </div>
       </div>
 
-      <style jsx>{`
-        @keyframes loading {
-          0% { transform: translateX(-100%); }
-          100% { transform: translateX(200%); }
-        }
-      `}</style>
+      <style>{`
+  @keyframes loading {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(200%); }
+  }
+`}</style>
     </div>
   );
 };

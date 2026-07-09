@@ -12,7 +12,7 @@ import { FaFacebook, FaTwitter, FaLinkedin, FaWhatsapp } from 'react-icons/fa';
 import LoaderJAS from '../common/Loader';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Reusable Share Modal Component
+// Reusable Share Modal Component (unchanged)
 // ─────────────────────────────────────────────────────────────────────────────
 const ShareModal = ({ isOpen, onClose, certificateId, studentName, courseName }) => {
   const [copied, setCopied] = useState(false);
@@ -101,8 +101,6 @@ const CertificateManagement = () => {
   const [formData, setFormData] = useState({
     studentId: '',
     type: 'course_completion',
-    grade: '',
-    percentage: ''
   });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -138,6 +136,8 @@ const CertificateManagement = () => {
       if (studentsRes.success) {
         setStudents(studentsRes.data.students || []);
         setFilteredStudents(studentsRes.data.students || []);
+      } else {
+        setError('Failed to load students: ' + (studentsRes.message || 'Unknown error'));
       }
       if (coursesRes.success) setCourses(coursesRes.data.courses || []);
       if (statsRes.success) setStats(statsRes.data);
@@ -200,8 +200,13 @@ const CertificateManagement = () => {
   };
 
   const resetForm = () => {
-    setFormData({ studentId: '', type: 'course_completion', grade: '', percentage: '' });
+    setFormData({ studentId: '', type: 'course_completion' });
     setSearchTerm('');
+  };
+
+  const openGenerateModal = () => {
+    setSearchTerm(''); // clear search so all students show
+    setShowGenerateModal(true);
   };
 
   const getTypeLabel = (type) => {
@@ -226,7 +231,7 @@ const CertificateManagement = () => {
           <p className="text-gray-500 mt-1 font-medium">Issue, track and verify academic credentials.</p>
         </div>
         <Button 
-          onClick={() => setShowGenerateModal(true)}
+          onClick={openGenerateModal}
           className="shadow-lg shadow-indigo-200 bg-indigo-600 hover:bg-indigo-700 transition-all duration-300 transform hover:-translate-y-1"
         >
           <Plus className="w-5 h-5 mr-2" /> Generate New Certificate
@@ -353,7 +358,7 @@ const CertificateManagement = () => {
         </div>
       </Card>
 
-      {/* Generate Modal */}
+      {/* Generate Modal - FIXED */}
       <Modal isOpen={showGenerateModal} onClose={() => setShowGenerateModal(false)} title="Generate New Credential" size="lg">
         <form onSubmit={handleGenerate} className="space-y-6">
           <div className="space-y-4">
@@ -370,14 +375,14 @@ const CertificateManagement = () => {
             
             <div className="border rounded-xl overflow-hidden">
               <select
-                multiple
-                value={[formData.studentId]}
+                value={formData.studentId}
                 onChange={(e) => setFormData({ ...formData, studentId: e.target.value })}
                 className="w-full h-40 px-2 py-2 outline-none text-sm"
                 required
               >
+                <option value="">Select a student</option>
                 {filteredStudents.map(student => (
-                  <option key={student._id} value={student._id} className="p-2 rounded-lg cursor-pointer hover:bg-indigo-50">
+                  <option key={student._id} value={student._id} className="p-2">
                     {student.name} • {student.enrollmentNo}
                   </option>
                 ))}
@@ -385,7 +390,7 @@ const CertificateManagement = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4">
             <div className="space-y-1">
               <label className="text-sm font-bold text-gray-700">Certificate Type</label>
               <select 
@@ -399,13 +404,6 @@ const CertificateManagement = () => {
                 <option value="bonafide">Bonafide</option>
               </select>
             </div>
-            <Input 
-              label="Grade" 
-              placeholder="e.g. A+" 
-              className="rounded-xl"
-              value={formData.grade}
-              onChange={(e) => setFormData({ ...formData, grade: e.target.value })}
-            />
           </div>
 
           <div className="flex justify-end gap-3 bg-gray-50 -mx-6 -mb-6 p-6">

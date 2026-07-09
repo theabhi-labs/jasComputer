@@ -152,8 +152,8 @@ const Navbar = () => {
 
             <div className="h-6 w-px bg-gray-200 mx-2"></div>
 
-            {/* Auth Buttons */}
-            {isAuthenticated ? (
+            {/* Auth — dashboard only when logged in */}
+            {isAuthenticated && (
               <div className="flex items-center space-x-2">
                 <Link 
                   to="/dashboard" 
@@ -173,21 +173,6 @@ const Navbar = () => {
                     Logout
                   </span>
                 </button>
-              </div>
-            ) : (
-              <div className="flex items-center space-x-2">
-                <Link 
-                  to="/login" 
-                  className="px-5 py-2 text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors"
-                >
-                  Log in
-                </Link>
-                <Link 
-                  to="/register" 
-                  className="px-5 py-2 text-sm font-semibold text-white bg-gradient-to-r from-blue-600 to-cyan-600 rounded-xl hover:shadow-lg hover:shadow-blue-200 transition-all duration-300 transform hover:scale-105"
-                >
-                  Sign up
-                </Link>
               </div>
             )}
           </div>
@@ -292,7 +277,7 @@ const Navbar = () => {
           </div>
 
           <div className="pt-4 mt-4 border-t border-gray-100 space-y-3">
-            {isAuthenticated ? (
+            {isAuthenticated && (
               <>
                 <Link 
                   to="/dashboard" 
@@ -313,23 +298,6 @@ const Navbar = () => {
                   </svg>
                   Logout
                 </button>
-              </>
-            ) : (
-              <>
-                <Link 
-                  to="/login" 
-                  className="flex items-center justify-center w-full px-4 py-3 text-gray-700 font-medium border border-gray-200 rounded-xl hover:bg-gray-50 transition-all duration-200"
-                  onClick={() => setIsOpen(false)}
-                >
-                  Log in
-                </Link>
-                <Link 
-                  to="/register" 
-                  className="flex items-center justify-center w-full px-4 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 text-white font-semibold rounded-xl hover:shadow-lg transition-all duration-300"
-                  onClick={() => setIsOpen(false)}
-                >
-                  Sign up
-                </Link>
               </>
             )}
           </div>

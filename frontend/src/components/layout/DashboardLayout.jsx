@@ -3,19 +3,16 @@ import React, { useState, useEffect } from 'react'
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
 import { 
-  FaHome, FaMoneyBillWave, FaCalendarCheck, FaCertificate, 
-  FaBook, FaReceipt, FaUser, FaSignOutAlt, FaUsers, FaChalkboardTeacher,
-  FaClipboardList, FaChartLine, FaEnvelope, FaBars, FaTimes,
-  FaChevronDown, FaBell, FaSearch, FaMoon, FaSun
+  FaHome, FaMoneyBillWave, FaCertificate, 
+  FaBook, FaUser, FaSignOutAlt, FaUsers,
+  FaBars, FaTimes, FaChevronDown, FaSearch
 } from 'react-icons/fa'
 
 const DashboardLayout = () => {
   const { user, logout } = useAuth()
   const location = useLocation()
   const navigate = useNavigate()
-  const role = user?.role
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [isDarkMode, setIsDarkMode] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
 
   // Close sidebar on route change (mobile)
@@ -39,44 +36,16 @@ const DashboardLayout = () => {
     navigate('/login')
   }
 
-  // Student Menu
-  const studentMenu = [
-    { path: '/dashboard', icon: FaHome, label: 'Dashboard', color: 'blue' },
-    { path: '/dashboard/my-fees', icon: FaMoneyBillWave, label: 'My Fees', color: 'green' },
-    { path: '/dashboard/my-attendance', icon: FaCalendarCheck, label: 'My Attendance', color: 'purple' },
-    { path: '/dashboard/my-certificates', icon: FaCertificate, label: 'My Certificates', color: 'orange' },
-    { path: '/dashboard/my-courses', icon: FaBook, label: 'My Courses', color: 'pink' },
-    { path: '/dashboard/payment-history', icon: FaReceipt, label: 'Payment History', color: 'indigo' },
-
-  ]
-
-  // Teacher Menu
-  const teacherMenu = [
-    { path: '/dashboard', icon: FaHome, label: 'Dashboard', color: 'blue' },
-    { path: '/dashboard/my-students', icon: FaUsers, label: 'My Students', color: 'green' },
-    { path: '/dashboard/mark-attendance', icon: FaCalendarCheck, label: 'Mark Attendance', color: 'purple' },
-    { path: '/dashboard/my-batches', icon: FaClipboardList, label: 'My Batches', color: 'orange' },
-  ]
-
-  // Admin Menu
-  const adminMenu = [
+  // ✅ Admin Menu Only
+  const menuItems = [
     { path: '/dashboard', icon: FaHome, label: 'Dashboard', color: 'blue' },
     { path: '/dashboard/students', icon: FaUsers, label: 'Students', color: 'green' },
-    { path: '/dashboard/teachers', icon: FaChalkboardTeacher, label: 'Teachers', color: 'purple' },
     { path: '/dashboard/courses', icon: FaBook, label: 'Courses', color: 'orange' },
-    { path: '/dashboard/batches', icon: FaClipboardList, label: 'Batches', color: 'pink' },
     { path: '/dashboard/fees', icon: FaMoneyBillWave, label: 'Fees', color: 'indigo' },
-    { path: '/dashboard/attendance', icon: FaCalendarCheck, label: 'Attendance', color: 'red' },
     { path: '/dashboard/certificates', icon: FaCertificate, label: 'Certificates', color: 'yellow' },
-    { path: '/dashboard/inquiries', icon: FaEnvelope, label: 'Inquiries', color: 'teal' },
-    { path: '/dashboard/reports', icon: FaChartLine, label: 'Reports', color: 'cyan' },
   ]
 
-  let menu = studentMenu
-  if (role === 'teacher') menu = teacherMenu
-  if (role === 'admin' || role === 'super_admin') menu = adminMenu
-
-  const currentPage = menu.find(item => item.path === location.pathname)?.label || 'Dashboard'
+  const currentPage = menuItems.find(item => item.path === location.pathname)?.label || 'Dashboard'
 
   // Get initials for avatar
   const getInitials = () => {
@@ -85,7 +54,7 @@ const DashboardLayout = () => {
   }
 
   return (
-    <div className={`flex h-screen bg-gray-50 ${isDarkMode ? 'dark' : ''}`}>
+    <div className="flex h-screen bg-gray-50">
       {/* Mobile Sidebar Overlay */}
       {sidebarOpen && (
         <div 
@@ -94,7 +63,7 @@ const DashboardLayout = () => {
         />
       )}
 
-      {/* Sidebar - Always visible on desktop, slide-in on mobile */}
+      {/* Sidebar */}
       <aside className={`
         fixed lg:relative top-0 left-0 z-30 w-72 lg:w-64 h-full 
         bg-gradient-to-br from-gray-900 via-gray-900 to-gray-800 
@@ -124,32 +93,18 @@ const DashboardLayout = () => {
               <span className="text-white font-bold text-sm">{getInitials()}</span>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-white truncate">{user?.name || 'User'}</p>
-              <p className="text-xs text-gray-400 capitalize mt-0.5">{role?.replace('_', ' ') || 'Student'}</p>
+              <p className="text-sm font-semibold text-white truncate">{user?.name || 'Admin'}</p>
+              <p className="text-xs text-gray-400 capitalize mt-0.5">Admin</p>
             </div>
           </div>
         </div>
         
         {/* Navigation Menu */}
         <nav className="flex-1 p-4 space-y-1.5 overflow-y-auto custom-scrollbar">
-          {menu.map((item) => {
+          {menuItems.map((item) => {
             const Icon = item.icon
             const isActive = location.pathname === item.path
-            // Fix: Replace dynamic color classes with static ones to avoid TailCSS purge issues
-            const colorMap = {
-              blue: 'blue',
-              green: 'green',
-              purple: 'purple',
-              orange: 'orange',
-              pink: 'pink',
-              indigo: 'indigo',
-              gray: 'gray',
-              red: 'red',
-              yellow: 'yellow',
-              teal: 'teal',
-              cyan: 'cyan'
-            }
-            const activeColor = colorMap[item.color] || 'blue'
+            const color = item.color || 'blue'
             
             return (
               <Link
@@ -158,30 +113,30 @@ const DashboardLayout = () => {
                 className={`
                   group flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200
                   ${isActive 
-                    ? `bg-gradient-to-r from-${activeColor}-500/20 to-${activeColor}-600/20 border-l-4 border-${activeColor}-500` 
+                    ? `bg-gradient-to-r from-${color}-500/20 to-${color}-600/20 border-l-4 border-${color}-500` 
                     : 'hover:bg-gray-800/50'
                   }
                 `}
               >
-                <Icon className={`w-5 h-5 transition-colors ${isActive ? `text-${activeColor}-400` : 'text-gray-400 group-hover:text-white'}`} />
+                <Icon className={`w-5 h-5 transition-colors ${isActive ? `text-${color}-400` : 'text-gray-400 group-hover:text-white'}`} />
                 <span className={`text-sm font-medium ${isActive ? 'text-white' : 'text-gray-300 group-hover:text-white'}`}>
                   {item.label}
                 </span>
                 {isActive && (
-                  <div className={`ml-auto w-1.5 h-1.5 rounded-full bg-${activeColor}-400 animate-pulse`} />
+                  <div className={`ml-auto w-1.5 h-1.5 rounded-full bg-${color}-400 animate-pulse`} />
                 )}
               </Link>
             )
           })}
         </nav>
-        
       </aside>
+
+      {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Header */}
         <header className="bg-white border-b border-gray-200 sticky top-0 z-20">
           <div className="px-4 sm:px-6 lg:px-8 py-4">
             <div className="flex items-center justify-between gap-4">
-              {/* Left Section */}
               <div className="flex items-center gap-3">
                 <button
                   onClick={() => setSidebarOpen(true)}
@@ -192,64 +147,48 @@ const DashboardLayout = () => {
                 <div>
                   <h1 className="text-lg sm:text-xl font-semibold text-gray-800">{currentPage}</h1>
                   <p className="text-xs text-gray-500 hidden sm:block mt-0.5">
-                    Welcome back, {user?.name?.split(' ')[0] || 'User'}!
+                    Welcome back, {user?.name?.split(' ')[0] || 'Admin'}!
                   </p>
                 </div>
               </div>
 
-              {/* Right Section */}
-              <div className="flex items-center gap-2 sm:gap-4">
+              {/* User Menu */}
+              <div className="relative user-menu">
+                <button
+                  onClick={() => setUserMenuOpen(!userMenuOpen)}
+                  className="flex items-center gap-2 p-1.5 rounded-xl hover:bg-gray-100 transition"
+                >
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 flex items-center justify-center">
+                    <span className="text-white font-bold text-xs">{getInitials()}</span>
+                  </div>
+                  <div className="hidden sm:block text-left">
+                    <p className="text-sm font-medium text-gray-700">{user?.name?.split(' ')[0] || 'Admin'}</p>
+                    <p className="text-xs text-gray-500 capitalize">Admin</p>
+                  </div>
+                  <FaChevronDown className={`hidden sm:block text-gray-400 text-xs transition-transform ${userMenuOpen ? 'rotate-180' : ''}`} />
+                </button>
 
-                {/* User Menu */}
-                <div className="relative user-menu">
-                  <button
-                    onClick={() => setUserMenuOpen(!userMenuOpen)}
-                    className="flex items-center gap-2 p-1.5 rounded-xl hover:bg-gray-100 transition"
-                  >
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 flex items-center justify-center">
-                      <span className="text-white font-bold text-xs">{getInitials()}</span>
-                    </div>
-                    <div className="hidden sm:block text-left">
-                      <p className="text-sm font-medium text-gray-700">{user?.name?.split(' ')[0] || 'User'}</p>
-                      <p className="text-xs text-gray-500 capitalize">{role?.replace('_', ' ') || 'Student'}</p>
-                    </div>
-                    <FaChevronDown className={`hidden sm:block text-gray-400 text-xs transition-transform ${userMenuOpen ? 'rotate-180' : ''}`} />
-                  </button>
-
-                  {/* Dropdown Menu */}
-                  {userMenuOpen && (
-                    <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-50 animate-fade-in-up">
-                      <Link
-                        to="/profile"
-                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition"
-                        onClick={() => setUserMenuOpen(false)}
-                      >
-                        <FaUser className="w-4 h-4 text-gray-400" />
-                        <span>My Profile</span>
-                      </Link>
-                      <div className="h-px bg-gray-100 my-1"></div>
-                      <button
-                        onClick={handleLogout}
-                        className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition"
-                      >
-                        <FaSignOutAlt className="w-4 h-4" />
-                        <span>Logout</span>
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Mobile Search */}
-            <div className="md:hidden mt-3">
-              <div className="flex items-center bg-gray-100 rounded-xl px-3 py-2">
-                <FaSearch className="text-gray-400 text-sm" />
-                <input
-                  type="text"
-                  placeholder="Search..."
-                  className="bg-transparent border-none text-sm ml-2 focus:outline-none flex-1"
-                />
+                {/* Dropdown */}
+                {userMenuOpen && (
+                  <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-50 animate-fade-in-up">
+                    <Link
+                      to="/profile"
+                      className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition"
+                      onClick={() => setUserMenuOpen(false)}
+                    >
+                      <FaUser className="w-4 h-4 text-gray-400" />
+                      <span>My Profile</span>
+                    </Link>
+                    <div className="h-px bg-gray-100 my-1"></div>
+                    <button
+                      onClick={handleLogout}
+                      className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition"
+                    >
+                      <FaSignOutAlt className="w-4 h-4" />
+                      <span>Logout</span>
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -294,12 +233,9 @@ const DashboardLayout = () => {
           animation: fade-in-up 0.2s ease-out;
         }
         
-        /* Hide scrollbar for Chrome, Safari and Opera */
         .no-scrollbar::-webkit-scrollbar {
           display: none;
         }
-        
-        /* Hide scrollbar for IE, Edge and Firefox */
         .no-scrollbar {
           -ms-overflow-style: none;
           scrollbar-width: none;

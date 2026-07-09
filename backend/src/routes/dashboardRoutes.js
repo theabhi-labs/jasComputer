@@ -15,6 +15,12 @@ router.get('/super-admin',
   dashboardController.getSuperAdminDashboard
 );
 
+// Admin Dashboard
+router.get('/admin', 
+  authorize(ROLES.SUPER_ADMIN, ROLES.ADMIN), 
+  dashboardController.getAdminDashboard
+);
+
 
 
 export default router;

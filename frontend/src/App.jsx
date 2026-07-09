@@ -11,7 +11,6 @@ import DashboardLayout from './components/layout/DashboardLayout'
 // Pages
 import HomePage from './pages/HomePage'
 import LoginForm from './components/auth/LoginForm'
-import RegisterForm from './components/auth/RegisterForm'
 import CoursesPage from './pages/CoursesPage'
 import CourseDetailPage from './pages/CourseDetailPage'
 import AboutPage from './pages/AboutPage'
@@ -19,40 +18,22 @@ import ContactPage from './pages/ContactPage'
 import VerifyCertificatePage from './pages/VerifyCertificatePage'
 import ForgotPassword from './components/auth/ForgotPassword'
 import ResetPassword from './components/auth/ResetPassword'
-import VerifyEmail from './components/auth/VerifyEmail'
 import CertificateDownloadPage from './pages/CertificateDownloadPage'
 import ProfilePage from './pages/ProfilePage'
 
-// Dashboards
-import StudentDashboard from './components/student/StudentDashboard'
-import TeacherDashboard from './components/teacher/TeacherDashboard'
 import AdminDashboard from './components/admin/AdminDashboard'
 
-// Student
-import StudentAttendance from './components/student/StudentAttendance'
-import StudentCertificates from './components/student/StudentCertificates'
-import StudentCourses from './components/student/StudentCourses'
 
-
-// Teacher
-import MyStudents from './components/teacher/MyStudents'
-import MyBatches from './components/teacher/MyBatches'
-import MarkAttendance from './components/teacher/MarkAttendance'
-import ViewAttendance from './components/teacher/ViewAttendance'
 
 // Admin
 import StudentManagement from './components/admin/StudentManagement'
-import TeacherManagement from './components/admin/TeacherManagement'
-import BatchManagement from './components/admin/BatchManagement'
 import CourseManagement from './components/admin/CourseManagement'
-import AttendanceManagement from './components/admin/AttendanceManagement'
-import InquiryManagement from './components/admin/InquiryManagement'
-import Reports from './components/admin/Reports'
 import CertificateManagement from './components/admin/CertificateManagement'
 
 // Guards
 import PrivateRoute from './routes/PrivateRoute'
 import PublicRoute from './routes/PublicRoute'
+import FeeManagement from './components/admin/feeManagment'
 
 function App() {
   const { loading, user } = useAuth()
@@ -84,10 +65,8 @@ function App() {
 
           <Route element={<PublicRoute />}>
             <Route path="/login" element={<LoginForm />} />
-            <Route path="/register" element={<RegisterForm />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
-            <Route path="/verify-email" element={<VerifyEmail />} />
           </Route>
         </Route>
 
@@ -105,20 +84,9 @@ function App() {
             {user?.role === 'student' && (
               <>
                 <Route path="/dashboard/my-fees" element={<StudentFees />} />
-                <Route path="/dashboard/my-attendance" element={<StudentAttendance />} />
                 <Route path="/dashboard/my-certificates" element={<StudentCertificates />} />
                 <Route path="/dashboard/my-courses" element={<StudentCourses />} />
                 <Route path="/dashboard/payment-history" element={<PaymentHistory />} />
-              </>
-            )}
-
-            {/* 👨‍🏫 TEACHER */}
-            {user?.role === 'teacher' && (
-              <>
-                <Route path="/dashboard/my-students" element={<MyStudents />} />
-                <Route path="/dashboard/my-batches" element={<MyBatches />} />
-                <Route path="/dashboard/mark-attendance" element={<MarkAttendance />} />
-                <Route path="/dashboard/view-attendance" element={<ViewAttendance />} />
               </>
             )}
 
@@ -126,13 +94,10 @@ function App() {
             {(user?.role === 'admin' || user?.role === 'super_admin') && (
               <>
                 <Route path="/dashboard/students" element={<StudentManagement />} />
-                <Route path="/dashboard/teachers" element={<TeacherManagement />} />
                 <Route path="/dashboard/courses" element={<CourseManagement />} />
-                <Route path="/dashboard/batches" element={<BatchManagement />} />
                 <Route path="/dashboard/certificates" element={<CertificateManagement />} />
-                <Route path="/dashboard/attendance" element={<AttendanceManagement />} />
-                <Route path="/dashboard/inquiries" element={<InquiryManagement />} />
-                <Route path="/dashboard/reports" element={<Reports />} />
+                <Route path="/dashboard/fees" element={<FeeManagement/>} />
+
               </>
             )}
 

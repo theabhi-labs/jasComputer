@@ -1,5 +1,6 @@
 // src/middleware/validationMiddleware.js
 import { body, validationResult, param } from 'express-validator';
+import Joi from 'joi';
 
 // ==================== EXISTING VALIDATIONS ====================
 
@@ -27,49 +28,77 @@ export const validateUserRegistration = [
     .isIn(['admin', 'teacher']).withMessage('Role must be either admin or teacher')
 ];
 
-// Validation rules for student registration (Step 1 - Personal Info)
-export const validateStudentRegistration = [
-  body('name')
-    .notEmpty().withMessage('Name is required')
-    .isLength({ min: 2, max: 50 }).withMessage('Name must be between 2 and 50 characters'),
-  
-  body('email')
-    .notEmpty().withMessage('Email is required')
-    .isEmail().withMessage('Please enter a valid email'),
-  
-  body('password')
-    .notEmpty().withMessage('Password is required')
-    .isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
-  
-  body('phone')
-    .notEmpty().withMessage('Phone number is required')
-    .matches(/^[0-9]{10}$/).withMessage('Please enter a valid 10-digit phone number'),
-  
-  body('fatherName')
-    .notEmpty().withMessage("Father's name is required"),
-  
-  body('address.street')
-    .notEmpty().withMessage('Street address is required'),
-  
-  body('address.city')
-    .notEmpty().withMessage('City is required'),
-  
-  body('address.state')
-    .notEmpty().withMessage('State is required'),
-  
-  body('address.pincode')
-    .notEmpty().withMessage('Pincode is required')
-    .matches(/^[0-9]{6}$/).withMessage('Please enter a valid 6-digit pincode'),
-  
-  body('dateOfBirth')
-    .notEmpty().withMessage('Date of birth is required')
-    .isISO8601().withMessage('Please enter a valid date'),
-  
-  body('gender')
-    .notEmpty().withMessage('Gender is required')
-    .isIn(['male', 'female', 'other']).withMessage('Gender must be male, female, or other'),
-];
 
+// Student creation schema
+const studentCreateSchema = Joi.object({
+  name: Joi.string().min(2).max(100).required(),
+  fatherName: Joi.string().min(2).max(100).required(),
+  motherName: Joi.string().min(2).max(100).required(),
+  mobile: Joi.string().pattern(/^[0-9]{10}$/).required(),
+  alternateMobile: Joi.string().pattern(/^[0-9]{10}$/).allow(''),
+  email: Joi.string().email().required(),
+  gender: Joi.string().valid('Male', 'Female', 'Other').required(),
+  dob: Joi.date().iso().required(),
+  address: Joi.string().required(),
+  city: Joi.string().required(),
+  state: Joi.string().required(),
+  pincode: Joi.string().pattern(/^[0-9]{6}$/).required(),
+  photo: Joi.string().uri().allow(''),
+  aadharNo: Joi.string().pattern(/^[0-9]{12}$/).required(),
+  admissionDate: Joi.date().iso(),
+  course: Joi.string().pattern(/^[0-9a-fA-F]{24}$/).required(), // MongoDB ObjectId
+  status: Joi.string().valid('active', 'inactive', 'suspended', 'graduated', 'dropped'),
+  documents: Joi.array().items(
+    Joi.object({
+      name: Joi.string().required(),
+      url: Joi.string().uri().required(),
+    })
+  ),
+});
+
+// Student update schema (all fields optional)
+const studentUpdateSchema = Joi.object({
+  name: Joi.string().min(2).max(100),
+  fatherName: Joi.string().min(2).max(100),
+  motherName: Joi.string().min(2).max(100),
+  mobile: Joi.string().pattern(/^[0-9]{10}$/),
+  alternateMobile: Joi.string().pattern(/^[0-9]{10}$/).allow(''),
+  email: Joi.string().email(),
+  gender: Joi.string().valid('Male', 'Female', 'Other'),
+  dob: Joi.date().iso(),
+  address: Joi.string(),
+  city: Joi.string(),
+  state: Joi.string(),
+  pincode: Joi.string().pattern(/^[0-9]{6}$/),
+  photo: Joi.string().uri().allow(''),
+  aadharNo: Joi.string().pattern(/^[0-9]{12}$/),
+  admissionDate: Joi.date().iso(),
+  course: Joi.string().pattern(/^[0-9a-fA-F]{24}$/),
+  status: Joi.string().valid('active', 'inactive', 'suspended', 'graduated', 'dropped'),
+  documents: Joi.array().items(
+    Joi.object({
+      name: Joi.string().required(),
+      url: Joi.string().uri().required(),
+    })
+  ),
+}).min(1); // at least one field to update
+
+// Middleware wrappers
+export const validateStudentCreate = (req, res, next) => {
+  const { error } = studentCreateSchema.validate(req.body);
+  if (error) {
+    return res.status(400).json({ message: error.details[0].message });
+  }
+  next();
+};
+
+export const validateStudentUpdate = (req, res, next) => {
+  const { error } = studentUpdateSchema.validate(req.body);
+  if (error) {
+    return res.status(400).json({ message: error.details[0].message });
+  }
+  next();
+};
 // ==================== NEW VALIDATIONS FOR REGISTRATION FLOW ====================
 
 // Validation for course selection (Step 2)
@@ -126,20 +155,6 @@ export const validateAdmissionFeePayment = [
     .isString().withMessage('Notes must be a string')
 ];
 
-// Validation for Razorpay webhook
-export const validateRazorpayWebhook = [
-  body('event')
-    .notEmpty().withMessage('Event is required'),
-  
-  body('payload')
-    .notEmpty().withMessage('Payload is required'),
-  
-  body('payload.payment.entity.id')
-    .optional(),
-  
-  body('payload.payment.entity.order_id')
-    .optional()
-];
 
 // ==================== PARAMETER VALIDATIONS ====================
 
@@ -164,64 +179,73 @@ export const validateEnrollmentIdParam = [
     .matches(/^ENR\/\d{4}\/\d{5}$/).withMessage('Invalid enrollment ID format')
 ];
 
+
+
+// Add to existing validation file
+
+export const transactionCreateSchema = Joi.object({
+  fee: Joi.string().pattern(/^[0-9a-fA-F]{24}$/).required(),
+  student: Joi.string().pattern(/^[0-9a-fA-F]{24}$/).required(),
+  amount: Joi.number().positive().required(),
+  paymentMode: Joi.string().valid('Cash', 'Bank Transfer', 'UPI', 'Card', 'Cheque', 'Online', 'Other').required(),
+  paymentDate: Joi.date().iso(),
+  remark: Joi.string().max(500).allow(''),
+});
+
+export const transactionUpdateSchema = Joi.object({
+  amount: Joi.number().positive(),
+  paymentMode: Joi.string().valid('Cash', 'Bank Transfer', 'UPI', 'Card', 'Cheque', 'Online', 'Other'),
+  paymentDate: Joi.date().iso(),
+  remark: Joi.string().max(500).allow(''),
+}).min(1);
+
+// Middleware wrappers
+export const validateTransactionCreate = (req, res, next) => {
+  const { error } = transactionCreateSchema.validate(req.body);
+  if (error) return res.status(400).json({ message: error.details[0].message });
+  next();
+};
+
+export const validateTransactionUpdate = (req, res, next) => {
+  const { error } = transactionUpdateSchema.validate(req.body);
+  if (error) return res.status(400).json({ message: error.details[0].message });
+  next();
+};
+
 // ==================== FEE VALIDATIONS ====================
 
-// Validation for creating fee record
-export const validateCreateFee = [
-  body('studentId')
-    .notEmpty().withMessage('Student ID is required')
-    .isMongoId().withMessage('Invalid student ID format'),
-  
-  body('courseId')
-    .notEmpty().withMessage('Course ID is required')
-    .isMongoId().withMessage('Invalid course ID format'),
-  
-  body('admissionFee')
-    .optional()
-    .isFloat({ min: 0 }).withMessage('Admission fee must be a positive number'),
-  
-  body('courseFee')
-    .optional()
-    .isFloat({ min: 0 }).withMessage('Course fee must be a positive number'),
-  
-  body('totalFees')
-    .optional()
-    .isFloat({ min: 0 }).withMessage('Total fees must be a positive number')
-];
 
-// Validation for making payment
-export const validateMakePayment = [
-  body('amount')
-    .notEmpty().withMessage('Amount is required')
-    .isFloat({ min: 1 }).withMessage('Amount must be greater than 0'),
-  
-  body('paymentMode')
-    .notEmpty().withMessage('Payment mode is required')
-    .isIn(['cash', 'upi', 'card', 'bank_transfer', 'cheque', 'online']).withMessage('Invalid payment mode'),
-  
-  body('transactionId')
-    .optional()
-    .isString().withMessage('Transaction ID must be a string'),
-  
-  body('notes')
-    .optional()
-    .isString().withMessage('Notes must be a string')
-];
 
-// Validation for installment payment
-export const validateInstallmentPayment = [
-  body('installmentNumber')
-    .notEmpty().withMessage('Installment number is required')
-    .isInt({ min: 1 }).withMessage('Installment number must be a positive integer'),
-  
-  body('amount')
-    .notEmpty().withMessage('Amount is required')
-    .isFloat({ min: 1 }).withMessage('Amount must be greater than 0'),
-  
-  body('paymentMode')
-    .notEmpty().withMessage('Payment mode is required')
-    .isIn(['cash', 'upi', 'card', 'bank_transfer', 'cheque', 'online']).withMessage('Invalid payment mode')
-];
+export const feeCreateSchema = Joi.object({
+  student: Joi.string().pattern(/^[0-9a-fA-F]{24}$/).required(),
+  course: Joi.string().pattern(/^[0-9a-fA-F]{24}$/).required(),
+  registrationFee: Joi.number().min(0).default(0),
+  courseFee: Joi.number().min(0).required(),
+  paidAmount: Joi.number().min(0).default(0),
+  discount: Joi.number().min(0).default(0),
+});
+
+export const feeUpdateSchema = Joi.object({
+  registrationFee: Joi.number().min(0),
+  courseFee: Joi.number().min(0),
+  paidAmount: Joi.number().min(0),
+  discount: Joi.number().min(0),
+  status: Joi.string().valid('pending', 'partial', 'paid', 'overdue', 'refunded'),
+}).min(1);
+
+
+// Middleware wrappers (already in validation file)
+export const validateFeeCreate = (req, res, next) => {
+  const { error } = feeCreateSchema.validate(req.body);
+  if (error) return res.status(400).json({ message: error.details[0].message });
+  next();
+};
+
+export const validateFeeUpdate = (req, res, next) => {
+  const { error } = feeUpdateSchema.validate(req.body);
+  if (error) return res.status(400).json({ message: error.details[0].message });
+  next();
+};
 
 // ==================== EXISTING VALIDATIONS ====================
 
@@ -305,22 +329,15 @@ export const validate = (req, res, next) => {
 // Default export for convenience
 export default {
   // Registration flow validations
-  validateStudentRegistration,
   validateCourseSelection,
   validateOTPVerification,
   validatePaymentCompletion,
   validateAdmissionFeePayment,
-  validateRazorpayWebhook,
   
   // Parameter validations
   validateStudentIdParam,
   validateIdParam,
   validateEnrollmentIdParam,
-  
-  // Fee validations
-  validateCreateFee,
-  validateMakePayment,
-  validateInstallmentPayment,
   
   // User validations
   validateUserRegistration,

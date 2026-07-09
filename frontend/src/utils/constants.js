@@ -1,9 +1,7 @@
 // API Endpoints
 export const API_ENDPOINTS = {
   // Auth
-  LOGIN: '/auth/login',
-  STUDENT_LOGIN: '/auth/student/login',
-  STUDENT_REGISTER: '/auth/student/register',
+  LOGIN: '/login',
   VERIFY_EMAIL: '/auth/verify-email',
   RESEND_OTP: '/auth/resend-verification',
   FORGOT_PASSWORD: '/auth/forgot-password',

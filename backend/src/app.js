@@ -14,12 +14,13 @@ const __dirname = path.dirname(__filename);
 dotenv.config();
 
 // Import routes
-// import studentRoutes from './routes/studentRoutes.js';
+import studentRoutes from './routes/studentRoutes.js';
 import courseRoutes from './routes/courseRoutes.js';
-// import feeRoutes from './routes/feeRoutes.js';
 import certificateRoutes from './routes/certificateRoutes.js';
 import dashboardRoutes from './routes/dashboardRoutes.js';
-// import userRoutes from './routes/userRoutes.js';
+import userRoutes from './routes/userRoutes.js';
+import { login } from './controllers/userController.js';
+import { validateLogin, validate } from './middleware/validationMiddleware.js';
 
 // Import middleware
 import { errorMiddleware, notFound } from './middleware/errorMiddleware.js';
@@ -96,13 +97,15 @@ app.get('/health', (req, res) => {
   });
 });
 
+// Auth — admin login only
+app.post('/api/login', validateLogin, validate, login);
+
 // API Routes
-// app.use('/api/students', studentRoutes);
+app.use('/api/students', studentRoutes);
 app.use('/api/courses', courseRoutes);
-// app.use('/api/fees', feeRoutes);
 app.use('/api/certificates', certificateRoutes);
 app.use('/api/dashboard', dashboardRoutes);
-// app.use('/api/users', userRoutes);
+app.use('/api/users', userRoutes);
 
 
 // 404 handler

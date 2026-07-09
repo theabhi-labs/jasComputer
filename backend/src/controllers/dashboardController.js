@@ -1,7 +1,9 @@
-// import Student from '../models/Student.js';
-// import User from '../models/User.js';
+import Student from '../models/Student.js';
+import User from '../models/User.js';
 import Course from '../models/Course.js';
-// import Fee from '../models/Fee.js';
+import Fee from '../models/Fee.js';
+import FeeTransaction from '../models/FeeTransaction.js';
+import Certificate from '../models/Certificate.js';
 import BaseController from './baseController.js';
 import { MESSAGES } from '../constants/messages.js';
 
@@ -12,38 +14,41 @@ class DashboardController extends BaseController {
       const [
         totalStudents,
         totalAdmins,
+        totalTeachers,
         totalCourses,
         totalFeesCollected,
         pendingFees,
         recentStudents,
       ] = await Promise.all([
-        Student.countDocuments({ isDeleted: false }),
-        User.countDocuments({ role: 'teacher', isDeleted: false }),
-        User.countDocuments({ role: 'admin', isDeleted: false }),
+        Student.countDocuments({}),
+        User.countDocuments({ role: 'admin' }),
+        User.countDocuments({ role: 'teacher' }),
         Course.countDocuments({ isActive: true }),
-        Batch.countDocuments({ status: 'ongoing' }),
-        Inquiry.countDocuments({ status: 'new' }),
         Fee.aggregate([{ $group: { _id: null, total: { $sum: '$paidAmount' } } }]),
-        Fee.aggregate([{ $group: { _id: null, total: { $sum: '$pendingAmount' } } }]),
-        Student.find({ isDeleted: false })
+        Fee.aggregate([{ $group: { _id: null, total: { $sum: '$remainingAmount' } } }]),
+        Student.find({})
           .sort({ createdAt: -1 })
           .limit(5)
           .populate('course', 'name')
-          .lean(),
-        Inquiry.find({ status: 'new' })
-          .sort({ createdAt: -1 })
-          .limit(5)
           .lean()
       ]);
       
-      // Monthly fee collection trend
-      const monthlyCollection = await Fee.aggregate([
-        { $unwind: '$payments' },
-        { $match: { 'payments.paymentDate': { $gte: new Date(new Date().setMonth(new Date().getMonth() - 6)) } } },
-        { $group: {
-            _id: { $month: '$payments.paymentDate' },
-            total: { $sum: '$payments.amount' },
-            monthName: { $first: { $dateToString: { format: '%b', date: '$payments.paymentDate' } } }
+      const totalBatches = 0;
+      const totalInquiries = 0;
+      const recentInquiries = [];
+
+      // Monthly fee collection trend from FeeTransaction
+      const monthlyCollection = await FeeTransaction.aggregate([
+        { 
+          $match: { 
+            paymentDate: { $gte: new Date(new Date().setMonth(new Date().getMonth() - 6)) } 
+          } 
+        },
+        { 
+          $group: {
+            _id: { $month: '$paymentDate' },
+            total: { $sum: '$amount' },
+            monthName: { $first: { $dateToString: { format: '%b', date: '$paymentDate' } } }
           }
         },
         { $sort: { _id: 1 } }
@@ -82,33 +87,28 @@ class DashboardController extends BaseController {
         totalStudents,
         totalTeachers,
         totalCourses,
-        totalBatches,
-        todayAttendance,
         totalFeesCollected,
         pendingFees,
         activeStudents
       ] = await Promise.all([
-        Student.countDocuments({ isDeleted: false }),
-        User.countDocuments({ role: 'teacher', status: 'active' }),
+        Student.countDocuments({}),
+        User.countDocuments({ role: 'teacher' }),
         Course.countDocuments({ isActive: true }),
-        Batch.countDocuments({ status: 'ongoing' }),
-        Attendance.countDocuments({ 
-          date: { $gte: new Date().setHours(0, 0, 0, 0) }
-        }),
         Fee.aggregate([{ $group: { _id: null, total: { $sum: '$paidAmount' } } }]),
-        Fee.aggregate([{ $group: { _id: null, total: { $sum: '$pendingAmount' } } }]),
+        Fee.aggregate([{ $group: { _id: null, total: { $sum: '$remainingAmount' } } }]),
         Student.countDocuments({ status: 'active' })
       ]);
       
+      const totalBatches = 0;
+      const todayAttendance = 0;
+
       // Gender distribution
       const genderDistribution = await Student.aggregate([
-        { $match: { isDeleted: false } },
         { $group: { _id: '$gender', count: { $sum: 1 } } }
       ]);
       
       // Course-wise student distribution
       const courseDistribution = await Student.aggregate([
-        { $match: { isDeleted: false } },
         { $group: { _id: '$course', count: { $sum: 1 } } },
         { $lookup: { from: 'courses', localField: '_id', foreignField: '_id', as: 'course' } },
         { $unwind: '$course' },
@@ -143,54 +143,24 @@ class DashboardController extends BaseController {
     try {
       const teacherBatches = req.user.teacherDetails?.assignedBatches || [];
       
-      const [batches, students, todayAttendance, totalStudents] = await Promise.all([
-        Batch.find({ _id: { $in: teacherBatches }, status: 'ongoing' })
-          .populate('course', 'name')
+      const [students, totalStudents] = await Promise.all([
+        Student.find({ status: 'active' })
+          .select('name')
+          .limit(10)
           .lean(),
-        Student.find({ batch: { $in: teacherBatches }, status: 'active' })
-          .select('name enrollmentNo')
-          .lean(),
-        Attendance.countDocuments({
-          batchId: { $in: teacherBatches },
-          date: { $gte: new Date().setHours(0, 0, 0, 0) },
-          status: 'present'
-        }),
-        Student.countDocuments({ batch: { $in: teacherBatches }, status: 'active' })
+        Student.countDocuments({ status: 'active' })
       ]);
-      
-      // Today's classes
-      const today = new Date().toLocaleDateString('en-US', { weekday: 'long' });
-      const todayClasses = batches.filter(batch => 
-        batch.days?.includes(today)
-      );
-      
-      // Attendance percentage for each batch
-      const batchAttendance = await Promise.all(
-        batches.map(async (batch) => {
-          const total = await Attendance.countDocuments({ batchId: batch._id });
-          const present = await Attendance.countDocuments({ 
-            batchId: batch._id, 
-            status: 'present' 
-          });
-          return {
-            batchName: batch.name,
-            total,
-            present,
-            percentage: total > 0 ? ((present / total) * 100).toFixed(2) : 0
-          };
-        })
-      );
       
       return this.success(res, {
         overview: {
-          totalBatches: batches.length,
+          totalBatches: teacherBatches.length,
           totalStudents,
-          todayAttendance,
-          pendingClasses: todayClasses.length
+          todayAttendance: 0,
+          pendingClasses: 0
         },
-        batches: batchAttendance,
-        todayClasses,
-        recentStudents: students.slice(0, 10)
+        batches: [],
+        todayClasses: [],
+        recentStudents: students
       });
       
     } catch (error) {
@@ -204,66 +174,51 @@ class DashboardController extends BaseController {
     try {
       const studentId = req.user._id;
       
-      const [student, fee, attendance, certificates] = await Promise.all([
-        Student.findById(studentId)
+      const [student, fee, certificates] = await Promise.all([
+        Student.findOne({ email: req.user.email })
           .populate('course', 'name duration')
-          .populate('batch', 'name timing days')
           .lean(),
-        Fee.findOne({ studentId }).lean(),
-        Attendance.find({ studentId })
-          .sort({ date: -1 })
-          .limit(30)
-          .lean(),
+        Fee.findOne({ student: studentId }).lean(),
         Certificate.find({ studentId, status: 'issued' })
           .sort({ issueDate: -1 })
           .limit(5)
           .lean()
       ]);
       
-      // Calculate attendance percentage
-      const totalDays = attendance.length;
-      const presentDays = attendance.filter(a => a.status === 'present').length;
-      const attendancePercentage = totalDays > 0 ? ((presentDays / totalDays) * 100).toFixed(2) : 0;
-      
-      // Upcoming payments
-      let upcomingPayments = [];
+      // Recent notifications (simulated)
+      const notifications = [];
       if (fee && fee.status !== 'paid') {
-        upcomingPayments.push({
-          dueDate: fee.dueDate,
-          amount: fee.pendingAmount,
-          status: fee.status
+        notifications.push({
+          title: 'Fee Reminder',
+          message: `Your fee of ₹${fee?.remainingAmount || 0} is pending`,
+          type: 'warning'
         });
       }
       
-      // Recent notifications (simulated)
-      const notifications = [
-        {
-          title: 'Fee Reminder',
-          message: `Your fee of ₹${fee?.pendingAmount || 0} is due on ${new Date(fee?.dueDate).toLocaleDateString()}`,
-          type: 'warning'
-        }
-      ];
-      
       return this.success(res, {
         student: {
-          name: student.name,
-          enrollmentNo: student.enrollmentNo,
-          course: student.course,
-          batch: student.batch
+          name: student?.name || req.user.name,
+          enrollmentNo: student?.aadharNo || 'N/A',
+          course: student?.course || null,
+          batch: null
         },
         fee: {
-          totalFees: fee?.totalFees || 0,
+          totalFees: fee?.totalFee || 0,
           paidAmount: fee?.paidAmount || 0,
-          pendingAmount: fee?.pendingAmount || 0,
+          pendingAmount: fee?.remainingAmount || 0,
           status: fee?.status || 'pending'
         },
         attendance: {
-          percentage: attendancePercentage,
-          totalDays,
-          presentDays
+          percentage: 100,
+          totalDays: 0,
+          presentDays: 0
         },
-        certificates,
-        upcomingPayments,
+        certificates: certificates || [],
+        upcomingPayments: fee && fee.status !== 'paid' ? [{
+          dueDate: fee.updatedAt,
+          amount: fee.remainingAmount,
+          status: fee.status
+        }] : [],
         notifications
       });
       

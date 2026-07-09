@@ -2,10 +2,8 @@ import React, { createContext, useState, useEffect, useContext } from 'react'
 import { authService } from '../services'
 import { jwtDecode } from 'jwt-decode'
 
-// Create context
 export const AuthContext = createContext(null)
 
-// Custom hook
 export const useAuth = () => {
   const context = useContext(AuthContext)
   if (!context) {
@@ -14,21 +12,18 @@ export const useAuth = () => {
   return context
 }
 
-// Provider component
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null)
   const [token, setToken] = useState(localStorage.getItem('token'))
   const [loading, setLoading] = useState(true)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
-  const [userType, setUserType] = useState(null)
 
   useEffect(() => {
     if (token) {
       try {
-        const decoded = jwtDecode(token)
+        jwtDecode(token)
         const userData = JSON.parse(localStorage.getItem('user') || '{}')
         setUser(userData)
-        setUserType(userData.role || 'student')
         setIsAuthenticated(true)
       } catch (error) {
         console.error('Invalid token:', error)
@@ -38,56 +33,41 @@ export const AuthProvider = ({ children }) => {
     setLoading(false)
   }, [token])
 
-  const login = async (email, password, type = 'user') => {
+  const setAuthSession = (userData, newToken) => {
+    localStorage.setItem('token', newToken)
+    localStorage.setItem('user', JSON.stringify(userData))
+    setToken(newToken)
+    setUser(userData)
+    setIsAuthenticated(true)
+  }
+
+  const login = async (email, password) => {
     try {
-      let response
-      if (type === 'student') {
-        response = await authService.loginStudent(email, password)
-      } else {
-        response = await authService.loginUser(email, password)
+      const data = await authService.login(email, password)
+
+      if (data.success) {
+        setAuthSession(data.user, data.token)
+        return { success: true, user: data.user }
       }
 
-      if (response.success) {
-        const { token: newToken, user: userData } = response.data
-        localStorage.setItem('token', newToken)
-        localStorage.setItem('user', JSON.stringify(userData))
-        setToken(newToken)
-        setUser(userData)
-        setUserType(userData.role || 'student')
-        setIsAuthenticated(true)
-        return { success: true, user: userData }
-      }
-      return { success: false, message: response.message }
+      return { success: false, message: data.message || 'Login failed' }
     } catch (error) {
-      return { success: false, message: error.message || 'Login failed' }
+      const message =
+        error.response?.data?.message ||
+        error.response?.data?.debug ||
+        error.message ||
+        'Server error. Please try again.'
+
+      console.error('Login error:', error.response?.data || error.message)
+      return { success: false, message }
     }
   }
 
-  const registerStudent = async (data) => {
-    try {
-      const response = await authService.registerStudent(data)
-      if (response.success) {
-        return { success: true, data: response.data }
-      }
-      return { success: false, message: response.message }
-    } catch (error) {
-      return { success: false, message: error.message || 'Registration failed' }
-    }
-  }
-
-  // FIXED: Logout function - only clear state, don't redirect
   const logout = () => {
-    // Clear localStorage
-    localStorage.removeItem('token')
-    localStorage.removeItem('user')
-    
-    // Clear state
+    authService.logout()
     setToken(null)
     setUser(null)
-    setUserType(null)
     setIsAuthenticated(false)
-    
-    // Don't redirect here - let component handle navigation
   }
 
   const updateUser = (updatedData) => {
@@ -111,16 +91,14 @@ export const AuthProvider = ({ children }) => {
     token,
     loading,
     isAuthenticated,
-    userType,
     login,
     logout,
-    registerStudent,
     updateUser,
     hasRole,
     isAdmin,
     isSuperAdmin,
     isTeacher,
-    isStudent
+    isStudent,
   }
 
   return (
