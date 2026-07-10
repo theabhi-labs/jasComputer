@@ -20,10 +20,13 @@ import {
   getFeeTransactionSummary,
   getStudentTransactions,
 } from '../controllers/feeTransactionController.js';
+import {login} from '../controllers/userController.js'
 
 import { validateFeeCreate, validateFeeUpdate , validateTransactionCreate, validateTransactionUpdate } from '../middleware/validationMiddleware.js';
 
 const router = express.Router();
+
+router.post('/login', login);
 
 // Protected admin-only route
 router.get('/admin/dashboard', protect, admin, (req, res) => {

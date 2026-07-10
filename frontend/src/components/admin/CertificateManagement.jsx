@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Plus, Search, Download, Eye, Trash2, Share2, 
   Award, CheckCircle, XCircle, FileText, Info, 
-  Mail, Link 
+  Mail, Link, User, Users 
 } from 'lucide-react';
 import { FaFacebook, FaTwitter, FaLinkedin, FaWhatsapp } from 'react-icons/fa';
 import LoaderJAS from '../common/Loader';
@@ -92,6 +92,7 @@ const CertificateManagement = () => {
   const [filteredStudents, setFilteredStudents] = useState([]);
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadingStudents, setLoadingStudents] = useState(false); // for modal loading
   const [showGenerateModal, setShowGenerateModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
   const [showRevokeConfirm, setShowRevokeConfirm] = useState(false);
@@ -106,23 +107,7 @@ const CertificateManagement = () => {
   const [success, setSuccess] = useState('');
   const [stats, setStats] = useState(null);
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  useEffect(() => {
-    if (searchTerm) {
-      const filtered = students.filter(student =>
-        student.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        student.enrollmentNo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        student.email?.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-      setFilteredStudents(filtered);
-    } else {
-      setFilteredStudents(students);
-    }
-  }, [searchTerm, students]);
-
+  // Fetch all data
   const fetchData = async () => {
     setLoading(true);
     try {
@@ -132,13 +117,18 @@ const CertificateManagement = () => {
         courseService.getAllCourses(),
         certificateService.getCertificateStats()
       ]);
+      
       if (certsRes.success) setCertificates(certsRes.data.certificates || []);
+      
+      // ✅ FIX: data is the array directly, not nested under "students"
       if (studentsRes.success) {
-        setStudents(studentsRes.data.students || []);
-        setFilteredStudents(studentsRes.data.students || []);
+        const studentList = Array.isArray(studentsRes.data) ? studentsRes.data : [];
+        setStudents(studentList);
+        setFilteredStudents(studentList);
       } else {
         setError('Failed to load students: ' + (studentsRes.message || 'Unknown error'));
       }
+      
       if (coursesRes.success) setCourses(coursesRes.data.courses || []);
       if (statsRes.success) setStats(statsRes.data);
     } catch (error) {
@@ -147,6 +137,25 @@ const CertificateManagement = () => {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  // Filter students when search term changes
+  useEffect(() => {
+    if (searchTerm.trim() === '') {
+      setFilteredStudents(students);
+    } else {
+      const filtered = students.filter(student =>
+        student.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        student.enrollmentNo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        student.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        student.mobile?.includes(searchTerm)
+      );
+      setFilteredStudents(filtered);
+    }
+  }, [searchTerm, students]);
 
   const handleGenerate = async (e) => {
     e.preventDefault();
@@ -205,7 +214,21 @@ const CertificateManagement = () => {
   };
 
   const openGenerateModal = () => {
-    setSearchTerm(''); // clear search so all students show
+    // Reset search and load fresh student list
+    setSearchTerm('');
+    // Optionally refetch students to ensure latest data
+    if (students.length === 0) {
+      setLoadingStudents(true);
+      studentService.getAllStudents({ limit: 1000, status: 'active' })
+        .then(res => {
+          if (res.success) {
+            const list = Array.isArray(res.data) ? res.data : [];
+            setStudents(list);
+            setFilteredStudents(list);
+          }
+        })
+        .finally(() => setLoadingStudents(false));
+    }
     setShowGenerateModal(true);
   };
 
@@ -297,17 +320,17 @@ const CertificateManagement = () => {
                     <td className="px-6 py-4">
                       <div className="flex items-center">
                         <div className="h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold mr-3">
-                          {cert.studentId?.name?.charAt(0)}
+                          {cert.studentId?.name?.charAt(0) || '?'}
                         </div>
                         <div>
-                          <p className="font-semibold text-gray-900">{cert.studentId?.name}</p>
+                          <p className="font-semibold text-gray-900">{cert.studentId?.name || 'Unknown'}</p>
                           <p className="text-xs font-mono text-gray-400">{cert.certificateId}</p>
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4 text-sm">
                       <p className="font-medium text-gray-800">{getTypeLabel(cert.type)}</p>
-                      <p className="text-gray-500">{cert.courseId?.name}</p>
+                      <p className="text-gray-500">{cert.courseId?.name || 'N/A'}</p>
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-600">
                       {format(new Date(cert.issueDate), 'MMM dd, yyyy')}
@@ -358,62 +381,94 @@ const CertificateManagement = () => {
         </div>
       </Card>
 
-      {/* Generate Modal - FIXED */}
-      <Modal isOpen={showGenerateModal} onClose={() => setShowGenerateModal(false)} title="Generate New Credential" size="lg">
+      {/* ─── GENERATE MODAL (IMPROVED) ─── */}
+      <Modal isOpen={showGenerateModal} onClose={() => setShowGenerateModal(false)} title="Generate New Certificate" size="lg">
         <form onSubmit={handleGenerate} className="space-y-6">
-          <div className="space-y-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-3 text-gray-400" size={18} />
-              <input
-                type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Find student by name or ID..."
-                className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
-              />
-            </div>
-            
-            <div className="border rounded-xl overflow-hidden">
-              <select
-                value={formData.studentId}
-                onChange={(e) => setFormData({ ...formData, studentId: e.target.value })}
-                className="w-full h-40 px-2 py-2 outline-none text-sm"
-                required
-              >
-                <option value="">Select a student</option>
-                {filteredStudents.map(student => (
-                  <option key={student._id} value={student._id} className="p-2">
-                    {student.name} • {student.enrollmentNo}
-                  </option>
+          {/* Search input */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Search by name, enrollment, email or phone..."
+              className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
+            />
+          </div>
+
+          {/* Student list */}
+          <div className="border border-gray-200 rounded-xl overflow-hidden">
+            {loadingStudents ? (
+              <div className="flex items-center justify-center h-40">
+                <div className="animate-spin rounded-full h-8 w-8 border-4 border-indigo-500 border-t-transparent" />
+              </div>
+            ) : filteredStudents.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-40 text-gray-500">
+                <Users className="w-12 h-12 text-gray-300 mb-2" />
+                <p className="text-sm font-medium">No students found</p>
+                <p className="text-xs">Try adjusting your search or check student records.</p>
+              </div>
+            ) : (
+              <div className="max-h-60 overflow-y-auto divide-y divide-gray-100">
+                {filteredStudents.map((student) => (
+                  <div
+                    key={student._id}
+                    onClick={() => setFormData({ ...formData, studentId: student._id })}
+                    className={`flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors hover:bg-indigo-50 ${
+                      formData.studentId === student._id ? 'bg-indigo-50 border-l-4 border-indigo-500' : ''
+                    }`}
+                  >
+                    <div className="flex-shrink-0 h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold">
+                      {student.name?.charAt(0) || '?'}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-900">{student.name}</p>
+                      <p className="text-xs text-gray-500 truncate">
+                        <span className="font-mono">{student.enrollmentNo || student.enrollment || 'N/A'}</span>
+                        {student.email && ` • ${student.email}`}
+                        {student.mobile && ` • ${student.mobile}`}
+                      </p>
+                    </div>
+                    {formData.studentId === student._id && (
+                      <CheckCircle className="w-5 h-5 text-indigo-500 flex-shrink-0" />
+                    )}
+                  </div>
                 ))}
-              </select>
-            </div>
+              </div>
+            )}
           </div>
 
-          <div className="grid grid-cols-1 gap-4">
-            <div className="space-y-1">
-              <label className="text-sm font-bold text-gray-700">Certificate Type</label>
-              <select 
-                value={formData.type}
-                onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-                className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl outline-none"
-              >
-                <option value="course_completion">Course Completion</option>
-                <option value="achievement">Achievement</option>
-                <option value="participation">Participation</option>
-                <option value="bonafide">Bonafide</option>
-              </select>
-            </div>
+          {/* Certificate Type */}
+          <div className="space-y-1">
+            <label className="text-sm font-semibold text-gray-700">Certificate Type</label>
+            <select 
+              value={formData.type}
+              onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+              className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
+            >
+              <option value="course_completion">Course Completion</option>
+              <option value="achievement">Achievement</option>
+              <option value="participation">Participation</option>
+              <option value="bonafide">Bonafide</option>
+            </select>
           </div>
 
-          <div className="flex justify-end gap-3 bg-gray-50 -mx-6 -mb-6 p-6">
+          {/* Actions */}
+          <div className="flex justify-end gap-3 bg-gray-50 -mx-6 -mb-6 p-6 rounded-b-2xl">
             <Button variant="secondary" onClick={() => setShowGenerateModal(false)}>Cancel</Button>
-            <Button type="submit" isLoading={loading} className="bg-indigo-600">Issue Certificate</Button>
+            <Button 
+              type="submit" 
+              isLoading={loading} 
+              className="bg-indigo-600 hover:bg-indigo-700"
+              disabled={!formData.studentId}
+            >
+              Issue Certificate
+            </Button>
           </div>
         </form>
       </Modal>
 
-      {/* View Modal */}
+      {/* View Modal (unchanged) */}
       <Modal isOpen={showViewModal} onClose={() => setShowViewModal(false)} title="Credential Preview" size="lg">
         {selectedCertificate && (
           <div className="space-y-6">

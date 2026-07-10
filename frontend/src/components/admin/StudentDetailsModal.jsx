@@ -150,18 +150,6 @@ const StudentDetailsModal = ({ isOpen, onClose, student, onDocumentsUpdated }) =
         {/* ========== PRINTABLE CONTENT ========== */}
         <div ref={printRef} className="space-y-6 bg-white p-6">
 
-          {/* Header - Institute Details */}
-          <div className="text-center border-b pb-4 mb-4">
-            <h1 className="text-2xl font-bold text-blue-800">JAS COMPUTER INSTITUTE</h1>
-            <p className="text-sm text-gray-600">Training &amp; Computer Education</p>
-            <p className="text-xs text-gray-500">
-              123, Education Lane, Near City Hospital, Civil Lines, Prayagraj, Uttar Pradesh - 211001
-            </p>
-            <p className="text-xs text-gray-500">
-              0532-1234567 | 9876543210 | info@jascomputerinstitute.com | www.jascomputerinstitute.com
-            </p>
-          </div>
-
           {/* Student Photo & Name */}
           <div className="flex items-center gap-6 border-b pb-4">
             <div className="flex-shrink-0">
@@ -367,17 +355,6 @@ const StudentDetailsModal = ({ isOpen, onClose, student, onDocumentsUpdated }) =
               </div>
             )}
           </Card>
-
-          {/* Footer (like profile verification) */}
-          <div className="border-t pt-4 text-center text-sm text-gray-500">
-            <div className="flex justify-between items-center">
-              <span>Generated On: {format(new Date(), 'dd MMM yyyy | hh:mm a')}</span>
-              <span className="flex items-center gap-1">
-                <FaQrcode className="text-gray-400" /> Verify Profile
-              </span>
-            </div>
-            <p className="mt-2 text-xs text-gray-400">Authorized Signature (Director)</p>
-          </div>
         </div>
         {/* ========== END PRINTABLE CONTENT ========== */}
 

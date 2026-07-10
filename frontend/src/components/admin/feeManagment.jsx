@@ -5,12 +5,10 @@ import {
   FaPrint, FaTimes, FaClock, FaReceipt, FaPlus
 } from 'react-icons/fa';
 
-// Services
 import feeService from '../../services/feeService';
 import studentService from '../../services/studentService';
 import courseService from '../../services/courseService';
 
-// Common components
 import { Card, Button, Input, Alert, Loader, Modal } from '../common';
 
 const FeeManagement = () => {
@@ -26,7 +24,6 @@ const FeeManagement = () => {
   const [tableRefreshing, setTableRefreshing] = useState(false);
   const [error, setError] = useState('');
 
-  // Search & filters
   const [searchInput, setSearchInput] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCourse, setFilterCourse] = useState('');
@@ -145,20 +142,64 @@ const FeeManagement = () => {
     }
   };
 
+  // ─── ✅ FIXED: fetchStudentDetails – only transactions, compute summary from them ───
   const fetchStudentDetails = async (studentId) => {
     if (!studentId) return;
     setLoadingSummary(true);
     try {
-      const [summaryRes, transRes] = await Promise.all([
-        feeService.getStudentFeeSummary(studentId),
-        feeService.getStudentTransactions(studentId),
-      ]);
-      if (summaryRes.success) setStudentSummary(summaryRes.data);
+      // 1. Fetch transactions only
+      const transRes = await feeService.getStudentTransactions(studentId);
+      let transactionList = [];
       if (transRes.success) {
-        setTransactions(Array.isArray(transRes.data) ? transRes.data : []);
+        transactionList = Array.isArray(transRes.data) ? transRes.data : [];
+      } else {
+        console.warn('Transactions fetch failed:', transRes.message);
+      }
+      setTransactions(transactionList);
+
+      // 2. Compute summary from transactions
+      // Since each transaction has 'fee' object with totalFee, paidAmount, remainingAmount, status
+      // We can use the first transaction's fee details or aggregate.
+      // Better: use the latest transaction's fee summary, or compute from all.
+      // Simplest: take the first transaction's fee object (assuming all transactions belong to same fee)
+      if (transactionList.length > 0) {
+        const firstTx = transactionList[0];
+        if (firstTx.fee) {
+          setStudentSummary({
+            totalFee: firstTx.fee.totalFee || 0,
+            paidAmount: firstTx.fee.paidAmount || 0,
+            remaining: firstTx.fee.remainingAmount || 0,
+            status: firstTx.fee.status || 'pending',
+          });
+        } else {
+          // Fallback: compute from transactions
+          const totalPaid = transactionList.reduce((sum, t) => sum + (t.amount || 0), 0);
+          // We don't know totalFee from transactions alone, so set placeholder
+          setStudentSummary({
+            totalFee: 0,
+            paidAmount: totalPaid,
+            remaining: 0,
+            status: 'partial',
+          });
+        }
+      } else {
+        // No transactions
+        setStudentSummary({
+          totalFee: 0,
+          paidAmount: 0,
+          remaining: 0,
+          status: 'pending',
+        });
       }
     } catch (err) {
-      console.error('Failed to fetch student details', err);
+      console.error('Failed to fetch student transactions', err);
+      setTransactions([]);
+      setStudentSummary({
+        totalFee: 0,
+        paidAmount: 0,
+        remaining: 0,
+        status: 'pending',
+      });
     } finally {
       setLoadingSummary(false);
     }
@@ -209,6 +250,12 @@ const FeeManagement = () => {
     fetchStudentDetails(student._id);
   };
 
+  const handleRowClick = (fee) => {
+    if (fee.student) {
+      handleSelectStudent(fee.student);
+    }
+  };
+
   const handlePageChange = (newPage) => {
     setPagination(prev => ({ ...prev, page: newPage }));
   };
@@ -218,7 +265,7 @@ const FeeManagement = () => {
     setPaymentForm(prev => ({ ...prev, [name]: value }));
   };
 
-  // ==================== PAYMENT HANDLER (FIXED) ====================
+  // ==================== PAYMENT HANDLER ====================
   const handlePaymentSubmit = async (e) => {
     e.preventDefault();
     if (!selectedStudent) return;
@@ -323,6 +370,12 @@ const FeeManagement = () => {
 
   const formatCurrency = (amount) => {
     return `₹${(amount || 0).toLocaleString('en-IN')}`;
+  };
+
+  const formatTransactionDate = (dateStr) => {
+    if (!dateStr) return 'N/A';
+    const d = new Date(dateStr);
+    return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
   };
 
   // ==================== MAIN RENDER ====================
@@ -456,6 +509,7 @@ const FeeManagement = () => {
             </div>
           )}
 
+          {/* ─── PAYMENT HISTORY TABLE ─── */}
           <div className="mt-5">
             <h4 className="text-sm font-semibold text-gray-300 mb-3 flex items-center gap-2">
               <FaReceipt className="text-[#FF6700]" /> Payment History
@@ -486,11 +540,21 @@ const FeeManagement = () => {
                     {transactions.map((t, idx) => (
                       <tr key={t._id} className="border-t border-white/5 hover:bg-white/[0.03] transition-colors">
                         <td className="px-4 py-3 text-gray-500">{idx + 1}</td>
-                        <td className="px-4 py-3 text-gray-300">{new Date(t.createdAt).toLocaleDateString('en-IN')}</td>
-                        <td className="px-4 py-3 font-medium text-white tabular-nums">{formatCurrency(t.amount)}</td>
-                        <td className="px-4 py-3 capitalize text-gray-300">{t.paymentMode || t.paymentMethod}</td>
-                        <td className="px-4 py-3 text-gray-400">{t.remark || t.notes || '-'}</td>
-                        <td className="px-4 py-3 text-gray-400">{t.receivedBy?.name || 'Admin'}</td>
+                        <td className="px-4 py-3 text-gray-300">
+                          {formatTransactionDate(t.paymentDate || t.createdAt)}
+                        </td>
+                        <td className="px-4 py-3 font-medium text-white tabular-nums">
+                          {formatCurrency(t.amount)}
+                        </td>
+                        <td className="px-4 py-3 capitalize text-gray-300">
+                          {t.paymentMode || t.paymentMethod || 'N/A'}
+                        </td>
+                        <td className="px-4 py-3 text-gray-400">
+                          {t.remark || t.notes || '-'}
+                        </td>
+                        <td className="px-4 py-3 text-gray-400">
+                          {t.receivedBy?.name || t.receivedBy || 'Admin'}
+                        </td>
                         <td className="px-4 py-3">
                           <button className="text-[#FF6700] hover:text-[#ff8533] text-xs flex items-center gap-1 font-medium">
                             <FaPrint size={11} /> View
@@ -576,7 +640,7 @@ const FeeManagement = () => {
                 <thead>
                   <tr className="bg-white/5 text-gray-400 text-xs uppercase tracking-wider">
                     <th className="px-4 py-3 text-left font-medium">#</th>
-                    <th className="px-4 py-3 text-left font-medium">Enrollment No</th>   {/* ← New column */}
+                    <th className="px-4 py-3 text-left font-medium">Enrollment No</th>
                     <th className="px-4 py-3 text-left font-medium">Student Name</th>
                     <th className="px-4 py-3 text-left font-medium">Course</th>
                     <th className="px-4 py-3 text-left font-medium">Total Fee</th>
@@ -587,7 +651,11 @@ const FeeManagement = () => {
                 </thead>
                 <tbody>
                   {fees.map((fee, idx) => (
-                    <tr key={fee._id} className="border-t border-white/5 hover:bg-white/[0.03] transition-colors">
+                    <tr
+                      key={fee._id}
+                      className="border-t border-white/5 hover:bg-white/[0.03] transition-colors cursor-pointer"
+                      onClick={() => handleRowClick(fee)}
+                    >
                       <td className="px-4 py-3 text-gray-600">{idx + 1 + (pagination.page - 1) * pagination.limit}</td>
                       <td className="px-4 py-3 font-mono text-sm text-[#FF6700]">
                         {fee.student?.enrollment || 'N/A'}
@@ -603,7 +671,10 @@ const FeeManagement = () => {
                       </td>
                       <td className="px-4 py-3 text-center">
                         <button
-                          onClick={() => handleSelectStudent(fee.student)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleSelectStudent(fee.student);
+                          }}
                           className="text-[#FF6700] hover:text-[#ff8533] font-medium text-xs flex items-center gap-1.5 mx-auto"
                         >
                           <FaEye size={12} /> View

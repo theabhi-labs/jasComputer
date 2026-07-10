@@ -1,4 +1,5 @@
 // src/controllers/certificateController.js
+import QRCode from "qrcode";
 import Certificate from '../models/Certificate.js';
 import Student from '../models/Student.js';
 import BaseController from './baseController.js';
@@ -136,21 +137,15 @@ class CertificateController extends BaseController {
       });
 
       // Generate mock QR code (base64 of certificate data)
-      const qrData = {
-        certificateId: certificate.certificateId,
-        studentName: student.name,
-        course: student.course?.name || 'N/A',
-        issueDate: certificate.issueDate,
-      };
-      certificate.qrCode = Buffer.from(JSON.stringify(qrData)).toString('base64');
+      const frontendUrl = process.env.FRONTEND_URL.replace(/\/$/, "");
+      const verificationUrl = `${frontendUrl}/verify-certificate/${certificate.certificateId}`;
+      certificate.qrCode = await QRCode.toDataURL(verificationUrl);
       await certificate.save();
 
       // Populate for response
       await certificate.populate('studentId', 'name email enrollmentNo');
       await certificate.populate('courseId', 'name code duration');
       await certificate.populate('issuedBy', 'name email');
-
-      const verificationUrl = `${process.env.FRONTEND_URL}/verify-certificate/${certificate.certificateId}`;
 
       return this.success(
         res,
@@ -340,7 +335,8 @@ class CertificateController extends BaseController {
 
       const monthlyIssued = await Certificate.aggregate([
         { $match: { status: 'issued' } },
-        { $group: {
+        {
+          $group: {
             _id: { $month: '$issueDate' },
             count: { $sum: 1 }
           }
